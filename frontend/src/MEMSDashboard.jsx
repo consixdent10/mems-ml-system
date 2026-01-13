@@ -3185,64 +3185,35 @@ const MEMSDashboard = () => {
                             )}
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Training Controls */}
+                                {/* Training Options */}
                                 <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="font-semibold mb-4 text-purple-400">LSTM Training</h4>
+                                    <h4 className="font-semibold mb-4 text-purple-400">LSTM Training Options</h4>
 
-                                    <div className="mb-4">
-                                        <label className="text-sm text-gray-400 block mb-2">Training Epochs: {lstmEpochs}</label>
-                                        <input
-                                            type="range"
-                                            min="5"
-                                            max="50"
-                                            value={lstmEpochs}
-                                            onChange={(e) => setLstmEpochs(parseInt(e.target.value))}
-                                            className="w-full"
-                                        />
+                                    {/* Colab Training - Primary Option */}
+                                    <div className="mb-4 p-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 rounded-lg border border-yellow-600/30">
+                                        <h5 className="font-semibold text-yellow-400 mb-2">🚀 Recommended: Train with GPU</h5>
+                                        <p className="text-sm text-gray-300 mb-3">
+                                            Train on Google Colab with free GPU. ~100x faster than CPU training!
+                                        </p>
+                                        <a
+                                            href="https://colab.research.google.com/github/consixdent10/mems-ml-system/blob/main/notebooks/LSTM_Training_Colab.ipynb"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-block w-full text-center py-3 px-4 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold transition"
+                                        >
+                                            🧠 Train LSTM with GPU in Colab
+                                        </a>
+                                        <p className="text-xs text-gray-400 mt-2 text-center">
+                                            Opens Google Colab → Run all cells → Auto-uploads to GitHub
+                                        </p>
                                     </div>
 
-                                    <button
-                                        onClick={async () => {
-                                            setLstmTraining(true);
-                                            try {
-                                                const response = await fetch(`${API_BASE_URL}/api/lstm-train`, {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        sensor_data: sensorData,
-                                                        sequence_length: 30,
-                                                        epochs: lstmEpochs,
-                                                        batch_size: 32
-                                                    })
-                                                });
-                                                const result = await response.json();
-                                                if (result.success) {
-                                                    setLstmHistory(result.training_history);
-                                                    setLstmStatus(prev => ({ ...prev, model_trained: true }));
-                                                } else {
-                                                    alert(result.detail || 'Training failed');
-                                                }
-                                            } catch (error) {
-                                                console.error('LSTM training error:', error);
-                                                alert('Training failed: ' + error.message);
-                                            }
-                                            setLstmTraining(false);
-                                        }}
-                                        disabled={lstmTraining || sensorData.length < 100}
-                                        className={`w-full py-3 rounded-lg font-semibold transition ${lstmTraining ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}
-                                    >
-                                        {lstmTraining ? '⏳ Training LSTM... (This may take a minute)' : '🚀 Train LSTM Model'}
-                                    </button>
-
-                                    {sensorData.length < 100 && (
-                                        <p className="text-yellow-400 text-sm mt-2">⚠️ Generate at least 100 data points first</p>
-                                    )}
-
+                                    {/* Model Status */}
                                     {lstmHistory && (
-                                        <div className="mt-4 p-3 bg-slate-600 rounded-lg">
-                                            <p className="text-green-400 font-semibold">✅ Training Complete!</p>
-                                            <p className="text-sm text-gray-300">Epochs: {lstmHistory.epochs_trained}</p>
-                                            <p className="text-sm text-gray-300">Final Loss: {lstmHistory.loss[lstmHistory.loss.length - 1]?.toFixed(4)}</p>
+                                        <div className="p-3 bg-slate-600 rounded-lg">
+                                            <p className="text-green-400 font-semibold">✅ Pre-Trained Model Loaded</p>
+                                            <p className="text-sm text-gray-300">Epochs: {lstmHistory.epochs || lstmHistory.epochs_trained}</p>
+                                            <p className="text-sm text-gray-300">Final Loss: {lstmHistory.loss[lstmHistory.loss.length - 1]?.toFixed(4) || lstmHistory.final_loss?.toFixed(4)}</p>
                                         </div>
                                     )}
                                 </div>
