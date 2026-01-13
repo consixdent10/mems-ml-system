@@ -25,11 +25,13 @@ npm-debug.log*
 *.sqlite3
 mems_ml_database.db
 
-# ML Models (too large for git)
+# ML Models (large files - except training metadata)
 *.h5
 *.pkl
 *.joblib
-saved_models/
+*.keras
+# Allow training history JSON for frontend
+!**/training_history.json
 
 # IDE
 .idea/

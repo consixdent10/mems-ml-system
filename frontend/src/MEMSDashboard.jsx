@@ -1050,6 +1050,12 @@ const MEMSDashboard = () => {
                     const status = await response.json();
                     setLstmStatus(status);
                     console.log('LSTM Status:', status);
+
+                    // Auto-load pre-trained model's training history
+                    if (status.pretrained_available && status.training_history) {
+                        setLstmHistory(status.training_history);
+                        console.log('Pre-trained LSTM history loaded');
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch LSTM status:', error);
@@ -3142,12 +3148,41 @@ const MEMSDashboard = () => {
                     {/* Deep Learning Tab */}
                     {activeTab === 'deeplearning' && (
                         <div className="space-y-6">
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center flex-wrap gap-2">
                                 <h3 className="text-xl font-semibold text-purple-400">🧠 LSTM Neural Network for RUL Prediction</h3>
-                                <div className={`px-3 py-1 rounded-full text-sm ${lstmStatus.tensorflow_available ? 'bg-green-600' : 'bg-red-600'}`}>
-                                    {lstmStatus.tensorflow_available ? '✅ TensorFlow Ready' : '❌ TensorFlow Not Installed'}
+                                <div className="flex items-center gap-2">
+                                    {lstmStatus.pretrained_available && (
+                                        <div className="px-3 py-1 rounded-full text-sm bg-blue-600">
+                                            🎓 Pre-Trained on Colab GPU
+                                        </div>
+                                    )}
+                                    <div className={`px-3 py-1 rounded-full text-sm ${lstmStatus.tensorflow_available ? 'bg-green-600' : 'bg-red-600'}`}>
+                                        {lstmStatus.tensorflow_available ? '✅ TensorFlow Ready' : '❌ TensorFlow Not Installed'}
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Pre-trained Model Notice */}
+                            {lstmStatus.pretrained_available && lstmHistory && (
+                                <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-4 border border-blue-500/30">
+                                    <div className="flex items-center justify-between flex-wrap gap-3">
+                                        <div>
+                                            <h4 className="font-semibold text-blue-300">✅ Pre-Trained Model Ready</h4>
+                                            <p className="text-sm text-gray-300 mt-1">
+                                                Trained on Google Colab with {lstmHistory.training_samples || 5000} samples over {lstmHistory.epochs} epochs
+                                            </p>
+                                        </div>
+                                        <a
+                                            href="https://colab.research.google.com/github/consixdent10/mems-ml-system/blob/main/notebooks/LSTM_Training_Colab.ipynb"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-semibold transition"
+                                        >
+                                            🔗 Open Training Notebook in Colab
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Training Controls */}

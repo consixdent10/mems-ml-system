@@ -780,9 +780,24 @@ async def get_lstm_status():
     """
     global lstm_predictor
     
+    # Check for pre-trained model history
+    pretrained_available = False
+    training_history = None
+    history_path = os.path.join(os.path.dirname(__file__), "saved_models", "training_history.json")
+    
+    if os.path.exists(history_path):
+        try:
+            with open(history_path, 'r') as f:
+                training_history = json.load(f)
+            pretrained_available = True
+        except Exception as e:
+            print(f"[LSTM] Could not load training history: {e}")
+    
     return {
         "tensorflow_available": TENSORFLOW_AVAILABLE,
         "model_trained": lstm_predictor is not None and lstm_predictor.is_trained,
+        "pretrained_available": pretrained_available,
+        "training_history": training_history,
         "message": "TensorFlow is available" if TENSORFLOW_AVAILABLE else "TensorFlow not installed. Run: pip install tensorflow"
     }
 
