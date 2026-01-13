@@ -25,13 +25,14 @@ npm-debug.log*
 *.sqlite3
 mems_ml_database.db
 
-# ML Models (large files - except training metadata)
+# ML Models (large files - except training artifacts)
 *.h5
 *.pkl
 *.joblib
-*.keras
-# Allow training history JSON for frontend
-!**/training_history.json
+# Allow Colab-trained model files in saved_models
+!**/saved_models/*.keras
+!**/saved_models/*.json
+!**/saved_models/*.png
 
 # IDE
 .idea/
