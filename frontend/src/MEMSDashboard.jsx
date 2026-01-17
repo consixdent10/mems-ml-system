@@ -4,136 +4,16 @@ import { Activity, TrendingUp, AlertTriangle, Database, Brain, Download, Mail, F
 import { jsPDF } from 'jspdf';
 import emailjs from '@emailjs/browser';
 
+// Extracted modules
+import { api, API_BASE_URL } from './services/api';
+import { performFFT, waveletTransform } from './utils/signalProcessing';
+import { detectAnomalies } from './utils/anomalyDetection';
+import ModelsTab from './components/tabs/ModelsTab';
+
 // Initialize EmailJS with your public key
 emailjs.init('4nXkITVq3xI5eeQLO');
 
-// API Configuration - Use environment variable for production, localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-// API Helper Functions
-const api = {
-    generateData: async (sensorType, degradationLevel) => {
-        const response = await fetch(`${API_BASE_URL}/api/generate-data`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                sensor_type: sensorType,
-                num_samples: 1000,
-                degradation_level: degradationLevel
-            })
-        });
-        if (!response.ok) throw new Error('Failed to generate data');
-        return response.json();
-    },
-
-    uploadData: async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await fetch(`${API_BASE_URL}/api/upload-data`, {
-            method: 'POST',
-            body: formData
-        });
-        if (!response.ok) throw new Error('Failed to upload data');
-        return response.json();
-    },
-
-    trainModels: async (sensorData) => {
-        const response = await fetch(`${API_BASE_URL}/api/train-models`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sensor_data: sensorData })
-        });
-        if (!response.ok) throw new Error('Failed to train models');
-        return response.json();
-    },
-
-    getXAIAnalysis: async (sensorData) => {
-        const response = await fetch(`${API_BASE_URL}/api/xai-analysis`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sensor_data: sensorData })
-        });
-        if (!response.ok) throw new Error('Failed to get XAI analysis');
-        return response.json();
-    },
-
-    // Real Datasets API
-    listDatasets: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/datasets`);
-        if (!response.ok) throw new Error('Failed to list datasets');
-        return response.json();
-    },
-
-    loadDataset: async (datasetId, options = {}) => {
-        const response = await fetch(`${API_BASE_URL}/api/datasets/load`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                dataset_id: datasetId,
-                degradation_stage: options.degradation_stage || 0,
-                fault_type: options.fault_type || 'normal',
-                scenario: options.scenario || 'normal'
-            })
-        });
-        if (!response.ok) throw new Error('Failed to load dataset');
-        return response.json();
-    }
-};
-
-// Advanced Signal Processing Functions
-const performFFT = (data) => {
-    const values = data.map(d => parseFloat(d.value));
-    const N = values.length;
-    const frequencies = [];
-    const magnitudes = [];
-
-    for (let k = 0; k < N / 2; k++) {
-        let real = 0, imag = 0;
-        for (let n = 0; n < N; n++) {
-            const angle = (2 * Math.PI * k * n) / N;
-            real += values[n] * Math.cos(angle);
-            imag -= values[n] * Math.sin(angle);
-        }
-        const magnitude = Math.sqrt(real * real + imag * imag) / N;
-        frequencies.push({ freq: (k / N * 100).toFixed(2), magnitude: magnitude.toFixed(4) });
-        magnitudes.push(magnitude);
-    }
-
-    return { frequencies: frequencies.slice(0, 50), magnitudes };
-};
-
-const waveletTransform = (data) => {
-    // Simplified Haar wavelet transform
-    const values = data.map(d => parseFloat(d.value));
-    const coefficients = [];
-
-    for (let i = 0; i < values.length - 1; i += 2) {
-        const avg = (values[i] + values[i + 1]) / 2;
-        const diff = (values[i] - values[i + 1]) / 2;
-        coefficients.push({ index: i / 2, approximation: avg.toFixed(4), detail: diff.toFixed(4) });
-    }
-
-    return coefficients.slice(0, 50);
-};
-
-// Anomaly Detection using Isolation Forest approach
-const detectAnomalies = (data) => {
-    const values = data.map(d => parseFloat(d.value));
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const std = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length);
-
-    const anomalies = data.map((d, i) => {
-        const zScore = Math.abs((parseFloat(d.value) - mean) / std);
-        return {
-            time: d.time,
-            value: d.value,
-            isAnomaly: zScore > 2.5,
-            score: zScore.toFixed(2)
-        };
-    });
-
-    return anomalies;
-};
+// Note: api, performFFT, waveletTransform, detectAnomalies are now imported from modules
 
 // ============================================================================
 // LEGACY: Frontend Demo-Only ML Functions (NOT USED - Backend handles training)
