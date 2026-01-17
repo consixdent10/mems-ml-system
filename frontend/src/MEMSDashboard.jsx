@@ -135,6 +135,12 @@ const detectAnomalies = (data) => {
     return anomalies;
 };
 
+// ============================================================================
+// LEGACY: Frontend Demo-Only ML Functions (NOT USED - Backend handles training)
+// These functions were used for initial prototype. Production uses FastAPI backend.
+// Keep for reference or remove in future cleanup.
+// ============================================================================
+
 // REAL Linear Regression Implementation
 const linearRegression = (X, y) => {
     const n = X.length;
@@ -734,23 +740,23 @@ MACHINE LEARNING MODEL PERFORMANCE
 ${modelResults.length > 0 ? modelResults.map((m, idx) => `
 Model ${idx + 1}: ${m.modelType}
 ${'─'.repeat(78)}
-  Training Metrics:
-    • Accuracy:                 ${(parseFloat(m.accuracy) * 100).toFixed(2)}%
-    • Mean Squared Error:       ${m.mse}
-    • R² Score:                 ${m.r2Score}
-    • Precision:                ${(parseFloat(m.precision) * 100).toFixed(2)}%
-    • Recall:                   ${(parseFloat(m.recall) * 100).toFixed(2)}%
-    • F1 Score:                 ${m.f1Score}
-    • Training Time:            ${m.trainingTime} seconds
-    • Training/Test Split:      ${m.trainingSize}/${m.testSize} samples
+  Regression Metrics (RUL Prediction):
+    • MAE (Mean Absolute Error):   ${m.mae?.toFixed(2) || 'N/A'}
+    • RMSE (Root Mean Sq Error):   ${m.rmse?.toFixed(2) || 'N/A'}
+    • MSE (Mean Squared Error):    ${m.mse?.toFixed(4) || 'N/A'}
+    • R² Score (Coefficient):      ${m.r2Score?.toFixed(4) || 'N/A'}
+    • MAPE (% Error):              ${m.mape?.toFixed(2) || 'N/A'}%
+    • Training Time:               ${m.trainingTime} seconds
+    • Training/Test Split:         ${m.trainingSize}/${m.testSize} samples
   
-  Performance Grade:            ${parseFloat(m.accuracy) > 0.90 ? 'A (Excellent)' :
-                        parseFloat(m.accuracy) > 0.85 ? 'B (Good)' :
-                            parseFloat(m.accuracy) > 0.80 ? 'C (Fair)' : 'D (Poor)'}
+  Performance Grade:              ${m.r2Score >= 0.85 ? 'A (Excellent)' :
+                        m.r2Score >= 0.70 ? 'B (Good)' :
+                            m.r2Score >= 0.50 ? 'C (Fair)' : 'D (Needs Improvement)'}
 `).join('\n') : '  No models trained yet. Please train models to see performance metrics.'}
 
 Best Performing Model:        ${modelResults.length > 0 ?
-            modelResults.reduce((best, m) => parseFloat(m.accuracy) > parseFloat(best.accuracy) ? m : best).modelType : 'N/A'}
+            modelResults.reduce((best, m) => (m.rmse || 999) < (best.rmse || 999) ? m : best).modelType : 'N/A'}
+(Selected by: Lowest RMSE)
 
 ════════════════════════════════════════════════════════════════════════════
 
@@ -1303,11 +1309,12 @@ const MEMSDashboard = () => {
 
         // Model Results
         if (modelResults.length > 0) {
-            csvContent += 'MODEL PERFORMANCE\n';
-            csvContent += 'Model,Accuracy,MSE,R² Score,Precision,Recall,F1 Score,Training Time (s)\n';
+            csvContent += 'MODEL PERFORMANCE (RUL Regression)\n';
+            csvContent += 'Model,MAE,RMSE,MSE,R² Score,MAPE (%),Training Time (s)\n';
             modelResults.forEach(m => {
-                csvContent += `${m.modelType},${m.accuracy},${m.mse},${m.r2Score},${m.precision},${m.recall},${m.f1Score},${m.trainingTime}\n`;
+                csvContent += `${m.modelType},${m.mae || 'N/A'},${m.rmse || 'N/A'},${m.mse || 'N/A'},${m.r2Score || 'N/A'},${m.mape || 'N/A'},${m.trainingTime || 'N/A'}\n`;
             });
+            csvContent += `\nBest Model (Lowest RMSE):,${bestModel || 'N/A'}\n`;
         }
 
         // Create and download CSV file
