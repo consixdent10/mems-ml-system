@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, ScatterChart, Scatter, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, Cell } from 'recharts';
+import { LineChart, Line, ScatterChart, Scatter, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, Cell, ReferenceLine } from 'recharts';
 import { Activity, TrendingUp, AlertTriangle, Database, Brain, Download, Mail, FileText, Zap, Waves } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import emailjs from '@emailjs/browser';
@@ -978,6 +978,8 @@ const MEMSDashboard = () => {
     const [sensorData, setSensorData] = useState([]);
     const [features, setFeatures] = useState(null);
     const [modelResults, setModelResults] = useState([]);
+    const [bestModel, setBestModel] = useState(null);
+    const [predictionsSample, setPredictionsSample] = useState(null);
     const [activeTab, setActiveTab] = useState('data');
     const [isTraining, setIsTraining] = useState(false);
     const [rul, setRul] = useState(null);
@@ -1192,8 +1194,10 @@ const MEMSDashboard = () => {
             // Call FastAPI backend for model training
             const response = await api.trainModels(sensorData);
 
-            // Set model results from API
-            setModelResults(response.models);
+            // Set model results from API (now returns { models, bestModel, predictionsSample })
+            setModelResults(response.models || []);
+            setBestModel(response.bestModel || null);
+            setPredictionsSample(response.predictionsSample || null);
 
             // Get XAI analysis from backend
             const xaiResponse = await api.getXAIAnalysis(sensorData);
@@ -2471,38 +2475,72 @@ const MEMSDashboard = () => {
 
                             {modelResults.length > 0 && (
                                 <>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {/* Leaderboard Table */}
+                                    <div className="bg-slate-700 rounded-lg p-4 mb-6">
+                                        <h4 className="text-lg font-semibold mb-3 text-blue-400">📊 Model Leaderboard (RUL Regression)</h4>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="border-b border-slate-600">
+                                                        <th className="text-left py-2 px-3 text-gray-400">Model</th>
+                                                        <th className="text-right py-2 px-3 text-gray-400">MAE ↓</th>
+                                                        <th className="text-right py-2 px-3 text-gray-400">RMSE ↓</th>
+                                                        <th className="text-right py-2 px-3 text-gray-400">R² ↑</th>
+                                                        <th className="text-right py-2 px-3 text-gray-400">Time</th>
+                                                        <th className="text-center py-2 px-3 text-gray-400">Best</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {modelResults.map((model, idx) => (
+                                                        <tr key={idx} className={`border-b border-slate-600 ${model.modelType === bestModel ? 'bg-green-900/30' : ''}`}>
+                                                            <td className="py-2 px-3 font-medium">{model.modelType}</td>
+                                                            <td className="py-2 px-3 text-right">{model.mae?.toFixed(2) || 'N/A'}</td>
+                                                            <td className="py-2 px-3 text-right">{model.rmse?.toFixed(2) || 'N/A'}</td>
+                                                            <td className="py-2 px-3 text-right">{model.r2Score?.toFixed(4) || 'N/A'}</td>
+                                                            <td className="py-2 px-3 text-right">{model.trainingTime?.toFixed(2)}s</td>
+                                                            <td className="py-2 px-3 text-center">
+                                                                {model.modelType === bestModel && <span className="text-green-400">✅</span>}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {bestModel && (
+                                            <p className="mt-3 text-sm text-green-400">
+                                                🏆 Best Model: <strong>{bestModel}</strong> (Lowest RMSE)
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Model Cards - Regression Metrics Only */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                         {modelResults.map((model, idx) => (
-                                            <div key={idx} className="bg-slate-700 rounded-lg p-4 border-l-4 border-blue-500">
-                                                <h4 className="text-lg font-semibold mb-3 text-blue-400">{model.modelType}</h4>
+                                            <div key={idx} className={`bg-slate-700 rounded-lg p-4 border-l-4 ${model.modelType === bestModel ? 'border-green-500' : 'border-blue-500'}`}>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <h4 className="text-lg font-semibold text-blue-400">{model.modelType}</h4>
+                                                    {model.modelType === bestModel && (
+                                                        <span className="bg-green-600 text-xs px-2 py-1 rounded-full">Best</span>
+                                                    )}
+                                                </div>
                                                 <div className="space-y-2 text-sm">
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-400">Accuracy:</span>
-                                                        <span className="font-medium">{(parseFloat(model.accuracy) * 100).toFixed(2)}%</span>
+                                                        <span className="text-gray-400">MAE:</span>
+                                                        <span className="font-medium text-yellow-400">{model.mae?.toFixed(2) || 'N/A'}</span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-400">MSE:</span>
-                                                        <span className="font-medium">{parseFloat(model.mse).toFixed(6)}</span>
+                                                        <span className="text-gray-400">RMSE:</span>
+                                                        <span className="font-medium text-orange-400">{model.rmse?.toFixed(2) || 'N/A'}</span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-400">R² Score:</span>
-                                                        <span className="font-medium">{parseFloat(model.r2Score).toFixed(4)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">Precision:</span>
-                                                        <span className="font-medium">{parseFloat(model.precision).toFixed(4)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">Recall:</span>
-                                                        <span className="font-medium">{parseFloat(model.recall).toFixed(4)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">F1 Score:</span>
-                                                        <span className="font-medium">{parseFloat(model.f1Score).toFixed(4)}</span>
+                                                        <span className={`font-medium ${model.r2Score > 0.7 ? 'text-green-400' : model.r2Score > 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                                            {model.r2Score?.toFixed(4) || 'N/A'}
+                                                        </span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-400">Training Time:</span>
-                                                        <span className="font-medium">{parseFloat(model.trainingTime).toFixed(2)}s</span>
+                                                        <span className="font-medium">{model.trainingTime?.toFixed(2)}s</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2510,8 +2548,9 @@ const MEMSDashboard = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* MAE vs RMSE Comparison */}
                                         <div>
-                                            <h3 className="text-xl font-semibold mb-4">Model Accuracy Comparison</h3>
+                                            <h3 className="text-xl font-semibold mb-4">MAE vs RMSE Comparison</h3>
                                             <ResponsiveContainer width="100%" height={300}>
                                                 <BarChart data={modelResults}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -2519,8 +2558,8 @@ const MEMSDashboard = () => {
                                                     <YAxis stroke="#9CA3AF" />
                                                     <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
                                                     <Legend />
-                                                    <Bar dataKey="accuracy" fill="#3B82F6" name="Accuracy" />
-                                                    <Bar dataKey="r2Score" fill="#10B981" name="R² Score" />
+                                                    <Bar dataKey="mae" fill="#F59E0B" name="MAE" />
+                                                    <Bar dataKey="rmse" fill="#EF4444" name="RMSE" />
                                                 </BarChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -2539,25 +2578,53 @@ const MEMSDashboard = () => {
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <h3 className="text-xl font-semibold mb-4">Performance Metrics Radar</h3>
+                                    {/* Actual vs Predicted Scatter Plot */}
+                                    {predictionsSample && predictionsSample.actual && (
+                                        <div className="mt-6">
+                                            <h3 className="text-xl font-semibold mb-4">Actual vs Predicted RUL (Best Model: {bestModel})</h3>
+                                            <ResponsiveContainer width="100%" height={350}>
+                                                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                    <XAxis type="number" dataKey="actual" name="Actual RUL%" stroke="#9CA3AF" label={{ value: 'Actual RUL%', position: 'insideBottom', offset: -10 }} />
+                                                    <YAxis type="number" dataKey="predicted" name="Predicted RUL%" stroke="#9CA3AF" label={{ value: 'Predicted RUL%', angle: -90, position: 'insideLeft' }} />
+                                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                                    <Scatter
+                                                        name="Predictions"
+                                                        data={predictionsSample.actual.map((a, i) => ({ actual: a, predicted: predictionsSample.predicted[i] }))}
+                                                        fill="#3B82F6"
+                                                    />
+                                                    <ReferenceLine x={0} y={0} stroke="#EF4444" strokeDasharray="3 3" />
+                                                </ScatterChart>
+                                            </ResponsiveContainer>
+                                            <p className="text-sm text-gray-400 text-center mt-2">Points near the diagonal line indicate accurate predictions</p>
+                                        </div>
+                                    )}
+
+                                    {/* Performance Metrics Radar - Normalized Regression Scores */}
+                                    <div className="mt-6">
+                                        <h3 className="text-xl font-semibold mb-4">Normalized Performance Scores</h3>
                                         <ResponsiveContainer width="100%" height={400}>
-                                            <RadarChart data={modelResults.slice(0, 4).map(m => ({
-                                                model: m.modelType,
-                                                Accuracy: parseFloat(m.accuracy) * 100,
-                                                Precision: parseFloat(m.precision) * 100,
-                                                Recall: parseFloat(m.recall) * 100,
-                                                F1: parseFloat(m.f1Score) * 100
-                                            }))}>
+                                            <RadarChart data={(() => {
+                                                // Normalize metrics to 0-100 scale (higher = better)
+                                                const maxMae = Math.max(...modelResults.map(m => m.mae || 0));
+                                                const maxRmse = Math.max(...modelResults.map(m => m.rmse || 0));
+                                                return modelResults.slice(0, 4).map(m => ({
+                                                    model: m.modelType,
+                                                    'MAE Score': maxMae > 0 ? (1 - (m.mae || 0) / maxMae) * 100 : 50,
+                                                    'RMSE Score': maxRmse > 0 ? (1 - (m.rmse || 0) / maxRmse) * 100 : 50,
+                                                    'R² Score': Math.max(0, Math.min(100, ((m.r2Score || 0) + 1) / 2 * 100))
+                                                }));
+                                            })()}>
                                                 <PolarGrid stroke="#374151" />
                                                 <PolarAngleAxis dataKey="model" stroke="#9CA3AF" />
-                                                <PolarRadiusAxis stroke="#9CA3AF" />
-                                                <Radar name="Accuracy" dataKey="Accuracy" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.6} />
-                                                <Radar name="Precision" dataKey="Precision" stroke="#10B981" fill="#10B981" fillOpacity={0.6} />
-                                                <Radar name="Recall" dataKey="Recall" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.6} />
+                                                <PolarRadiusAxis stroke="#9CA3AF" domain={[0, 100]} />
+                                                <Radar name="MAE Score" dataKey="MAE Score" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.5} />
+                                                <Radar name="RMSE Score" dataKey="RMSE Score" stroke="#EF4444" fill="#EF4444" fillOpacity={0.5} />
+                                                <Radar name="R² Score" dataKey="R² Score" stroke="#10B981" fill="#10B981" fillOpacity={0.5} />
                                                 <Legend />
                                             </RadarChart>
                                         </ResponsiveContainer>
+                                        <p className="text-sm text-gray-400 text-center mt-2">Higher scores = better performance (normalized to 0-100)</p>
                                     </div>
                                 </>
                             )}

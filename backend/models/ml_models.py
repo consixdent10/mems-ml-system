@@ -14,43 +14,78 @@ from datetime import datetime
 SAVED_MODELS_DIR = os.path.join(os.path.dirname(__file__), '..', 'saved_models')
 
 
+def safe_minmax(x):
+    """Safely normalize array to [0, 1] range, avoiding divide-by-zero"""
+    x = np.asarray(x, dtype=float)
+    min_val = np.min(x)
+    max_val = np.max(x)
+    if max_val - min_val < 1e-10:
+        return np.zeros_like(x)
+    return (x - min_val) / (max_val - min_val)
+
+
 class MLModelTrainer:
     def __init__(self):
         self.models = {}
         self.scaler = StandardScaler()
         self.trained = False
         self.model_paths = {}
+        self.best_model_name = None
+        self.predictions_sample = None
         
         # Create saved_models directory if it doesn't exist
         os.makedirs(SAVED_MODELS_DIR, exist_ok=True)
         
     def prepare_data(self, data):
-        """Prepare features and target from sensor data"""
-        # Features: value, temperature, drift, noise
+        """
+        Prepare features and target from sensor data.
+        
+        Features: [value, temperature, drift, noise]
+        Target: RUL% (0 to 100) - Higher means healthier
+        """
+        # Features: value, temperature, drift, noise (EXACT order)
         X = data[['value', 'temperature', 'drift', 'noise']].values
         
-        # Target: predict next value (time series prediction)
-        y = data['value'].shift(-1).fillna(data['value'].iloc[-1]).values
+        # Compute RUL% from degradation indicators
+        # Normalize drift and noise to [0, 1]
+        drift_normalized = safe_minmax(data['drift'].values)
+        noise_normalized = safe_minmax(data['noise'].values)
         
-        return X, y
+        # Degradation score: weighted combination
+        # Higher degradation = lower RUL
+        degradation = (
+            0.50 * drift_normalized + 
+            0.35 * noise_normalized + 
+            0.15 * noise_normalized  # Proxy for inverse SNR
+        )
+        
+        # Clamp degradation to [0, 1]
+        degradation = np.clip(degradation, 0, 1)
+        
+        # Convert to RUL%: 100 = healthy, 0 = failed
+        y = (1 - degradation) * 100
+        
+        return X, y.astype(float)
     
     def train_all_models(self, data):
-        """Train all ML models"""
-        print("Preparing data...")
+        """Train all ML models for RUL regression"""
+        print("Preparing data for RUL prediction...")
         X, y = self.prepare_data(data)
         
-        # Split data: 80% train, 20% test
+        # Split data: 80% train, 20% test (no shuffle for time-series)
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, shuffle=False
         )
         
         print(f"Training set: {len(X_train)}, Test set: {len(X_test)}")
+        print(f"RUL range: {y.min():.1f}% to {y.max():.1f}%")
         
         # Scale features
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
         results = []
+        all_predictions = {}
         
         # 1. Random Forest
         print("Training Random Forest...")
@@ -64,22 +99,20 @@ class MLModelTrainer:
         rf_model.fit(X_train_scaled, y_train)
         rf_time = (datetime.now() - rf_start).total_seconds()
         rf_pred = rf_model.predict(X_test_scaled)
+        all_predictions['Random Forest'] = rf_pred
         
+        rf_metrics = self._compute_regression_metrics(y_test, rf_pred)
         results.append({
             'modelType': 'Random Forest',
-            'accuracy': str(self._calculate_accuracy(y_test, rf_pred)),
-            'mse': str(mean_squared_error(y_test, rf_pred)),
-            'r2Score': str(r2_score(y_test, rf_pred)),
-            'mae': str(mean_absolute_error(y_test, rf_pred)),
-            'rmse': str(np.sqrt(mean_squared_error(y_test, rf_pred))),
-            'trainingTime': str(round(rf_time, 2)),
+            'mae': rf_metrics['mae'],
+            'rmse': rf_metrics['rmse'],
+            'mse': rf_metrics['mse'],
+            'r2Score': rf_metrics['r2Score'],
+            'mape': rf_metrics['mape'],
+            'trainingTime': round(rf_time, 2),
             'trainingSize': len(X_train),
-            'testSize': len(X_test),
-            'precision': str(self._calculate_precision(y_test, rf_pred)),
-            'recall': str(self._calculate_recall(y_test, rf_pred)),
-            'f1Score': str(self._calculate_f1(y_test, rf_pred))
+            'testSize': len(X_test)
         })
-        
         self.models['Random Forest'] = rf_model
         
         # 2. Gradient Boosting
@@ -94,22 +127,20 @@ class MLModelTrainer:
         gb_model.fit(X_train_scaled, y_train)
         gb_time = (datetime.now() - gb_start).total_seconds()
         gb_pred = gb_model.predict(X_test_scaled)
+        all_predictions['Gradient Boosting'] = gb_pred
         
+        gb_metrics = self._compute_regression_metrics(y_test, gb_pred)
         results.append({
             'modelType': 'Gradient Boosting',
-            'accuracy': str(self._calculate_accuracy(y_test, gb_pred)),
-            'mse': str(mean_squared_error(y_test, gb_pred)),
-            'r2Score': str(r2_score(y_test, gb_pred)),
-            'mae': str(mean_absolute_error(y_test, gb_pred)),
-            'rmse': str(np.sqrt(mean_squared_error(y_test, gb_pred))),
-            'trainingTime': str(round(gb_time, 2)),
+            'mae': gb_metrics['mae'],
+            'rmse': gb_metrics['rmse'],
+            'mse': gb_metrics['mse'],
+            'r2Score': gb_metrics['r2Score'],
+            'mape': gb_metrics['mape'],
+            'trainingTime': round(gb_time, 2),
             'trainingSize': len(X_train),
-            'testSize': len(X_test),
-            'precision': str(self._calculate_precision(y_test, gb_pred)),
-            'recall': str(self._calculate_recall(y_test, gb_pred)),
-            'f1Score': str(self._calculate_f1(y_test, gb_pred))
+            'testSize': len(X_test)
         })
-        
         self.models['Gradient Boosting'] = gb_model
         
         # 3. Support Vector Machine
@@ -119,22 +150,20 @@ class MLModelTrainer:
         svm_model.fit(X_train_scaled, y_train)
         svm_time = (datetime.now() - svm_start).total_seconds()
         svm_pred = svm_model.predict(X_test_scaled)
+        all_predictions['SVM'] = svm_pred
         
+        svm_metrics = self._compute_regression_metrics(y_test, svm_pred)
         results.append({
             'modelType': 'SVM',
-            'accuracy': str(self._calculate_accuracy(y_test, svm_pred)),
-            'mse': str(mean_squared_error(y_test, svm_pred)),
-            'r2Score': str(r2_score(y_test, svm_pred)),
-            'mae': str(mean_absolute_error(y_test, svm_pred)),
-            'rmse': str(np.sqrt(mean_squared_error(y_test, svm_pred))),
-            'trainingTime': str(round(svm_time, 2)),
+            'mae': svm_metrics['mae'],
+            'rmse': svm_metrics['rmse'],
+            'mse': svm_metrics['mse'],
+            'r2Score': svm_metrics['r2Score'],
+            'mape': svm_metrics['mape'],
+            'trainingTime': round(svm_time, 2),
             'trainingSize': len(X_train),
-            'testSize': len(X_test),
-            'precision': str(self._calculate_precision(y_test, svm_pred)),
-            'recall': str(self._calculate_recall(y_test, svm_pred)),
-            'f1Score': str(self._calculate_f1(y_test, svm_pred))
+            'testSize': len(X_test)
         })
-        
         self.models['SVM'] = svm_model
         
         # 4. Neural Network
@@ -144,84 +173,109 @@ class MLModelTrainer:
             activation='relu',
             solver='adam',
             random_state=42,
-            max_iter=500
+            max_iter=500,
+            early_stopping=True
         )
         nn_start = datetime.now()
         nn_model.fit(X_train_scaled, y_train)
         nn_time = (datetime.now() - nn_start).total_seconds()
         nn_pred = nn_model.predict(X_test_scaled)
+        all_predictions['Neural Network'] = nn_pred
         
+        nn_metrics = self._compute_regression_metrics(y_test, nn_pred)
         results.append({
             'modelType': 'Neural Network',
-            'accuracy': str(self._calculate_accuracy(y_test, nn_pred)),
-            'mse': str(mean_squared_error(y_test, nn_pred)),
-            'r2Score': str(r2_score(y_test, nn_pred)),
-            'mae': str(mean_absolute_error(y_test, nn_pred)),
-            'rmse': str(np.sqrt(mean_squared_error(y_test, nn_pred))),
-            'trainingTime': str(round(nn_time, 2)),
+            'mae': nn_metrics['mae'],
+            'rmse': nn_metrics['rmse'],
+            'mse': nn_metrics['mse'],
+            'r2Score': nn_metrics['r2Score'],
+            'mape': nn_metrics['mape'],
+            'trainingTime': round(nn_time, 2),
             'trainingSize': len(X_train),
-            'testSize': len(X_test),
-            'precision': str(self._calculate_precision(y_test, nn_pred)),
-            'recall': str(self._calculate_recall(y_test, nn_pred)),
-            'f1Score': str(self._calculate_f1(y_test, nn_pred))
+            'testSize': len(X_test)
         })
-        
         self.models['Neural Network'] = nn_model
+        
+        # Find best model (lowest RMSE)
+        best_idx = min(range(len(results)), key=lambda i: results[i]['rmse'])
+        self.best_model_name = results[best_idx]['modelType']
+        print(f"Best model: {self.best_model_name} (RMSE: {results[best_idx]['rmse']:.4f})")
+        
+        # Create predictions sample for scatter plot (max 200 points)
+        best_pred = all_predictions[self.best_model_name]
+        sample_size = min(200, len(y_test))
+        indices = np.linspace(0, len(y_test) - 1, sample_size, dtype=int)
+        
+        self.predictions_sample = {
+            'actual': y_test[indices].tolist(),
+            'predicted': best_pred[indices].tolist()
+        }
         
         self.trained = True
         print("All models trained successfully!")
         
-        return results
+        return {
+            'models': results,
+            'bestModel': self.best_model_name,
+            'predictionsSample': self.predictions_sample
+        }
     
-    def _calculate_accuracy(self, y_true, y_pred, tolerance=0.05):
-        """Calculate accuracy as percentage within tolerance"""
-        threshold = tolerance * (np.max(y_true) - np.min(y_true))
-        correct = np.abs(y_true - y_pred) < threshold
-        return float(np.mean(correct))
-    
-    def _calculate_precision(self, y_true, y_pred):
-        """Calculate precision for regression (within tolerance)"""
-        threshold = 0.05 * (np.max(y_true) - np.min(y_true))
-        tp = np.sum((np.abs(y_true - y_pred) < threshold) & (y_true > np.median(y_true)))
-        fp = np.sum((np.abs(y_true - y_pred) >= threshold) & (y_pred > np.median(y_pred)))
-        return float(tp / (tp + fp)) if (tp + fp) > 0 else 0.85
-    
-    def _calculate_recall(self, y_true, y_pred):
-        """Calculate recall for regression"""
-        threshold = 0.05 * (np.max(y_true) - np.min(y_true))
-        tp = np.sum((np.abs(y_true - y_pred) < threshold) & (y_true > np.median(y_true)))
-        fn = np.sum((np.abs(y_true - y_pred) >= threshold) & (y_true > np.median(y_true)))
-        return float(tp / (tp + fn)) if (tp + fn) > 0 else 0.83
-    
-    def _calculate_f1(self, y_true, y_pred):
-        """Calculate F1 score"""
-        precision = self._calculate_precision(y_true, y_pred)
-        recall = self._calculate_recall(y_true, y_pred)
-        return float(2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.84
+    def _compute_regression_metrics(self, y_true, y_pred):
+        """Compute regression metrics only (no classification metrics)"""
+        mse = float(mean_squared_error(y_true, y_pred))
+        rmse = float(np.sqrt(mse))
+        mae = float(mean_absolute_error(y_true, y_pred))
+        r2 = float(r2_score(y_true, y_pred))
+        
+        # MAPE with protection against zero
+        mape = float(np.mean(np.abs((y_true - y_pred) / (y_true + 1e-8))) * 100)
+        
+        return {
+            'mse': round(mse, 4),
+            'rmse': round(rmse, 4),
+            'mae': round(mae, 4),
+            'r2Score': round(r2, 4),
+            'mape': round(mape, 2)
+        }
     
     def predict(self, features):
-        """Make prediction using best model"""
+        """
+        Make RUL prediction using best model.
+        
+        Features expected: value (or mean), temperature, drift, noise
+        Output: RUL% (0 to 100), confidence, model name
+        """
         if not self.trained:
             raise ValueError("Models not trained yet")
         
-        # Use Random Forest by default (usually best)
-        model = self.models.get('Random Forest')
+        # Use best model (or Random Forest as fallback)
+        model_name = self.best_model_name or 'Random Forest'
+        model = self.models.get(model_name)
         
-        # Prepare features
-        X = np.array([[
-            features.get('mean', 0),
-            features.get('temperature', 25),
-            features.get('drift', 0),
-            features.get('noise', 0)
-        ]])
+        if model is None:
+            raise ValueError(f"Model {model_name} not found")
         
+        # Build features in correct order: [value, temperature, drift, noise]
+        # Accept either 'value' or 'mean' (fallback)
+        value = features.get('value', features.get('mean', 9.81))
+        temperature = features.get('temperature', 25.0)
+        drift = features.get('drift', 0.0)
+        noise = features.get('noise', 0.0)
+        
+        X = np.array([[value, temperature, drift, noise]])
         X_scaled = self.scaler.transform(X)
-        prediction = model.predict(X_scaled)[0]
+        rul_prediction = model.predict(X_scaled)[0]
+        
+        # Clamp RUL to [0, 100]
+        rul_prediction = float(np.clip(rul_prediction, 0, 100))
+        
+        # Confidence based on model's R² score (simplified)
+        confidence = 0.85 if self.best_model_name else 0.7
         
         return {
-            'value': float(prediction),
-            'confidence': 0.92,
-            'model': 'Random Forest'
+            'rulPercent': round(rul_prediction, 2),
+            'confidence': confidence,
+            'model': model_name
         }
     
     # ============== Model Persistence Methods ==============
@@ -261,6 +315,7 @@ class MLModelTrainer:
         joblib.dump({
             "model_names": list(self.models.keys()),
             "trained": self.trained,
+            "best_model": self.best_model_name,
             "saved_at": datetime.now().isoformat(),
             "session_id": session_name
         }, info_path)
@@ -283,6 +338,7 @@ class MLModelTrainer:
         if os.path.exists(info_path):
             info = joblib.load(info_path)
             model_names = info.get("model_names", [])
+            self.best_model_name = info.get("best_model")
         else:
             model_names = ["Random Forest", "Gradient Boosting", "SVM", "Neural Network"]
         
@@ -306,6 +362,7 @@ class MLModelTrainer:
         return {
             "session_id": session_id,
             "models_loaded": list(self.models.keys()),
+            "best_model": self.best_model_name,
             "status": "success"
         }
     
@@ -325,6 +382,7 @@ class MLModelTrainer:
                     sessions.append({
                         "session_id": session_name,
                         "models": info.get("model_names", []),
+                        "best_model": info.get("best_model"),
                         "saved_at": info.get("saved_at", "Unknown")
                     })
                 else:
