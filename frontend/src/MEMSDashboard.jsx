@@ -2348,184 +2348,16 @@ const MEMSDashboard = () => {
                     )}
 
                     {activeTab === 'models' && (
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-semibold">ML Model Training & Comparison</h3>
-                                <button
-                                    onClick={trainModels}
-                                    disabled={isTraining}
-                                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
-                                >
-                                    {isTraining ? 'Training...' : 'Train All Models'}
-                                </button>
-                            </div>
-
-                            {modelResults.length > 0 && (
-                                <>
-                                    {/* Leaderboard Table */}
-                                    <div className="bg-slate-700 rounded-lg p-4 mb-6">
-                                        <h4 className="text-lg font-semibold mb-3 text-blue-400">📊 Model Leaderboard (RUL Regression)</h4>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-sm">
-                                                <thead>
-                                                    <tr className="border-b border-slate-600">
-                                                        <th className="text-left py-2 px-3 text-gray-400">Model</th>
-                                                        <th className="text-right py-2 px-3 text-gray-400">MAE ↓</th>
-                                                        <th className="text-right py-2 px-3 text-gray-400">RMSE ↓</th>
-                                                        <th className="text-right py-2 px-3 text-gray-400">R² ↑</th>
-                                                        <th className="text-right py-2 px-3 text-gray-400">Time</th>
-                                                        <th className="text-center py-2 px-3 text-gray-400">Best</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {modelResults.map((model, idx) => (
-                                                        <tr key={idx} className={`border-b border-slate-600 ${model.modelType === bestModel ? 'bg-green-900/30' : ''}`}>
-                                                            <td className="py-2 px-3 font-medium">{model.modelType}</td>
-                                                            <td className="py-2 px-3 text-right">{model.mae?.toFixed(2) || 'N/A'}</td>
-                                                            <td className="py-2 px-3 text-right">{model.rmse?.toFixed(2) || 'N/A'}</td>
-                                                            <td className="py-2 px-3 text-right">{model.r2Score?.toFixed(4) || 'N/A'}</td>
-                                                            <td className="py-2 px-3 text-right">{model.trainingTime?.toFixed(2)}s</td>
-                                                            <td className="py-2 px-3 text-center">
-                                                                {model.modelType === bestModel && <span className="text-green-400">✅</span>}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        {bestModel && (
-                                            <p className="mt-3 text-sm text-green-400">
-                                                🏆 Best Model: <strong>{bestModel}</strong> (Lowest RMSE)
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Model Cards - Regression Metrics Only */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        {modelResults.map((model, idx) => (
-                                            <div key={idx} className={`bg-slate-700 rounded-lg p-4 border-l-4 ${model.modelType === bestModel ? 'border-green-500' : 'border-blue-500'}`}>
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <h4 className="text-lg font-semibold text-blue-400">{model.modelType}</h4>
-                                                    {model.modelType === bestModel && (
-                                                        <span className="bg-green-600 text-xs px-2 py-1 rounded-full">Best</span>
-                                                    )}
-                                                </div>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">MAE:</span>
-                                                        <span className="font-medium text-yellow-400">{model.mae?.toFixed(2) || 'N/A'}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">RMSE:</span>
-                                                        <span className="font-medium text-orange-400">{model.rmse?.toFixed(2) || 'N/A'}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">R² Score:</span>
-                                                        <span className={`font-medium ${model.r2Score > 0.7 ? 'text-green-400' : model.r2Score > 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                            {model.r2Score?.toFixed(4) || 'N/A'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">Training Time:</span>
-                                                        <span className="font-medium">{model.trainingTime?.toFixed(2)}s</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* MAE vs RMSE Comparison */}
-                                        <div>
-                                            <h3 className="text-xl font-semibold mb-4">MAE vs RMSE Comparison</h3>
-                                            <ResponsiveContainer width="100%" height={300}>
-                                                <BarChart data={modelResults}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                    <XAxis dataKey="modelType" stroke="#9CA3AF" angle={-15} textAnchor="end" height={80} />
-                                                    <YAxis stroke="#9CA3AF" />
-                                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                                    <Legend />
-                                                    <Bar dataKey="mae" fill="#F59E0B" name="MAE" />
-                                                    <Bar dataKey="rmse" fill="#EF4444" name="RMSE" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-
-                                        <div>
-                                            <h3 className="text-xl font-semibold mb-4">Feature Importance</h3>
-                                            <ResponsiveContainer width="100%" height={300}>
-                                                <BarChart data={getFeatureImportance()} layout="vertical">
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                    <XAxis type="number" stroke="#9CA3AF" />
-                                                    <YAxis dataKey="feature" type="category" stroke="#9CA3AF" />
-                                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                                    <Bar dataKey="importance" fill="#8B5CF6" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-
-                                    {/* Actual vs Predicted Scatter Plot */}
-                                    {predictionsSample && predictionsSample.actual && (() => {
-                                        const scatterData = predictionsSample.actual.map((a, i) => ({ actual: a, predicted: predictionsSample.predicted[i] }));
-                                        const minVal = Math.min(...predictionsSample.actual, ...predictionsSample.predicted);
-                                        const maxVal = Math.max(...predictionsSample.actual, ...predictionsSample.predicted);
-                                        const bestModelData = modelResults.find(m => m.modelType === bestModel);
-                                        const bestR2 = bestModelData?.r2Score || 0;
-                                        return (
-                                            <div className="mt-6">
-                                                <h3 className="text-xl font-semibold mb-2">Actual vs Predicted RUL (Best Model: {bestModel})</h3>
-                                                <p className="text-sm text-gray-400 mb-4">Model R²: <span className={bestR2 >= 0.7 ? 'text-green-400' : 'text-yellow-400'}>{bestR2.toFixed(4)}</span></p>
-                                                <ResponsiveContainer width="100%" height={350}>
-                                                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                        <XAxis type="number" dataKey="actual" name="Actual RUL%" stroke="#9CA3AF" domain={[0, 100]} label={{ value: 'Actual RUL%', position: 'insideBottom', offset: -10 }} />
-                                                        <YAxis type="number" dataKey="predicted" name="Predicted RUL%" stroke="#9CA3AF" domain={[0, 100]} label={{ value: 'Predicted RUL%', angle: -90, position: 'insideLeft' }} />
-                                                        <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                                        {/* Ideal diagonal line y=x */}
-                                                        <ReferenceLine segment={[{ x: 0, y: 0 }, { x: 100, y: 100 }]} stroke="#10B981" strokeWidth={2} strokeDasharray="5 5" />
-                                                        <Scatter
-                                                            name="Predictions"
-                                                            data={scatterData}
-                                                            fill="#3B82F6"
-                                                        />
-                                                    </ScatterChart>
-                                                </ResponsiveContainer>
-                                                <p className="text-sm text-gray-400 text-center mt-2">Green diagonal = ideal (y=x). Points near line = accurate predictions.</p>
-                                            </div>
-                                        );
-                                    })()}
-
-                                    {/* Performance Metrics Radar - Normalized Regression Scores */}
-                                    <div className="mt-6">
-                                        <h3 className="text-xl font-semibold mb-4">Normalized Performance Scores</h3>
-                                        <ResponsiveContainer width="100%" height={400}>
-                                            <RadarChart data={(() => {
-                                                // Normalize metrics to 0-100 scale (higher = better)
-                                                const maxMae = Math.max(...modelResults.map(m => m.mae || 0));
-                                                const maxRmse = Math.max(...modelResults.map(m => m.rmse || 0));
-                                                return modelResults.slice(0, 4).map(m => ({
-                                                    model: m.modelType,
-                                                    'MAE Score': maxMae > 0 ? (1 - (m.mae || 0) / maxMae) * 100 : 50,
-                                                    'RMSE Score': maxRmse > 0 ? (1 - (m.rmse || 0) / maxRmse) * 100 : 50,
-                                                    'R² Score': Math.max(0, Math.min(100, ((m.r2Score || 0) + 1) / 2 * 100))
-                                                }));
-                                            })()}>
-                                                <PolarGrid stroke="#374151" />
-                                                <PolarAngleAxis dataKey="model" stroke="#9CA3AF" />
-                                                <PolarRadiusAxis stroke="#9CA3AF" domain={[0, 100]} />
-                                                <Radar name="MAE Score" dataKey="MAE Score" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.5} />
-                                                <Radar name="RMSE Score" dataKey="RMSE Score" stroke="#EF4444" fill="#EF4444" fillOpacity={0.5} />
-                                                <Radar name="R² Score" dataKey="R² Score" stroke="#10B981" fill="#10B981" fillOpacity={0.5} />
-                                                <Legend />
-                                            </RadarChart>
-                                        </ResponsiveContainer>
-                                        <p className="text-sm text-gray-400 text-center mt-2">Higher scores = better performance (normalized to 0-100)</p>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        <ModelsTab
+                            modelResults={modelResults}
+                            bestModel={bestModel}
+                            predictionsSample={predictionsSample}
+                            isTraining={isTraining}
+                            trainModels={trainModels}
+                            getFeatureImportance={getFeatureImportance}
+                        />
                     )}
+
 
                     {activeTab === 'xai' && (
                         <div className="space-y-6">
@@ -2806,528 +2638,539 @@ const MEMSDashboard = () => {
                                 </>
                             )}
                         </div>
-                    )}
+                    )
+                    }
 
-                    {activeTab === 'prediction' && (
-                        <div className="space-y-6">
-                            <h3 className="text-xl font-semibold mb-4">Performance Degradation Prediction</h3>
+                    {
+                        activeTab === 'prediction' && (
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-semibold mb-4">Performance Degradation Prediction</h3>
 
-                            <div className="bg-slate-700 rounded-lg p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <h4 className="text-2xl font-bold text-blue-400">{rul}%</h4>
-                                        <p className="text-gray-400">Remaining Useful Life</p>
+                                <div className="bg-slate-700 rounded-lg p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h4 className="text-2xl font-bold text-blue-400">{rul}%</h4>
+                                            <p className="text-gray-400">Remaining Useful Life</p>
+                                        </div>
+                                        <div className={`px-4 py-2 rounded-full ${parseFloat(rul) > 70 ? 'bg-green-600' :
+                                            parseFloat(rul) > 40 ? 'bg-orange-600' : 'bg-red-600'
+                                            }`}>
+                                            {parseFloat(rul) > 70 ? 'Healthy' :
+                                                parseFloat(rul) > 40 ? 'Warning' : 'Critical'}
+                                        </div>
                                     </div>
-                                    <div className={`px-4 py-2 rounded-full ${parseFloat(rul) > 70 ? 'bg-green-600' :
-                                        parseFloat(rul) > 40 ? 'bg-orange-600' : 'bg-red-600'
-                                        }`}>
-                                        {parseFloat(rul) > 70 ? 'Healthy' :
-                                            parseFloat(rul) > 40 ? 'Warning' : 'Critical'}
-                                    </div>
-                                </div>
 
-                                <div className="w-full bg-slate-600 rounded-full h-4">
-                                    <div
-                                        className={`h-4 rounded-full transition-all ${parseFloat(rul) > 70 ? 'bg-green-500' :
-                                            parseFloat(rul) > 40 ? 'bg-orange-500' : 'bg-red-500'
-                                            }`}
-                                        style={{ width: `${rul}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="font-semibold mb-3 text-blue-400">Predicted Failure Modes</h4>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <div className="flex justify-between mb-1">
-                                                <span className="text-sm">Calibration Drift</span>
-                                                <span className="text-sm font-semibold">{(degradation * 8).toFixed(1)}%</span>
-                                            </div>
-                                            <div className="w-full bg-slate-600 rounded-full h-2">
-                                                <div className="bg-red-500 h-2 rounded-full" style={{ width: `${degradation * 8}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between mb-1">
-                                                <span className="text-sm">Noise Increase</span>
-                                                <span className="text-sm font-semibold">{(degradation * 6).toFixed(1)}%</span>
-                                            </div>
-                                            <div className="w-full bg-slate-600 rounded-full h-2">
-                                                <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${degradation * 6}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between mb-1">
-                                                <span className="text-sm">Temperature Sensitivity</span>
-                                                <span className="text-sm font-semibold">{(degradation * 5).toFixed(1)}%</span>
-                                            </div>
-                                            <div className="w-full bg-slate-600 rounded-full h-2">
-                                                <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${degradation * 5}%` }}></div>
-                                            </div>
-                                        </div>
+                                    <div className="w-full bg-slate-600 rounded-full h-4">
+                                        <div
+                                            className={`h-4 rounded-full transition-all ${parseFloat(rul) > 70 ? 'bg-green-500' :
+                                                parseFloat(rul) > 40 ? 'bg-orange-500' : 'bg-red-500'
+                                                }`}
+                                            style={{ width: `${rul}%` }}
+                                        />
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="font-semibold mb-2 text-blue-400">Maintenance Schedule</h4>
-                                    <ul className="space-y-2 text-sm">
-                                        {parseFloat(rul) < 50 && (
-                                            <li className="flex items-start">
-                                                <span className="text-orange-400 mr-2">⚠️</span>
-                                                <span>Schedule calibration within 7 days</span>
-                                            </li>
-                                        )}
-                                        {parseFloat(rul) < 30 && (
-                                            <li className="flex items-start">
-                                                <span className="text-red-400 mr-2">🔴</span>
-                                                <span>Critical: Plan sensor replacement immediately</span>
-                                            </li>
-                                        )}
-                                        {parseFloat(rul) >= 50 && (
-                                            <li className="flex items-start">
-                                                <span className="text-green-400 mr-2">✓</span>
-                                                <span>Sensor operating within normal parameters</span>
-                                            </li>
-                                        )}
-                                        <li className="flex items-start">
-                                            <span className="text-blue-400 mr-2">📅</span>
-                                            <span>Next check: {Math.ceil((100 - degradation) * 2)} days</span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="text-purple-400 mr-2">🔧</span>
-                                            <span>Regular calibration every {parseFloat(rul) > 70 ? '30' : '15'} days</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-lg font-semibold mb-4">Degradation Forecast (Next 100 Days)</h4>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <AreaChart data={Array.from({ length: 20 }, (_, i) => ({
-                                        day: i * 5,
-                                        rul: Math.max(0, 100 - degradation * 10 - i * 3),
-                                        upper: Math.max(0, 100 - degradation * 10 - i * 2.5),
-                                        lower: Math.max(0, 100 - degradation * 10 - i * 3.5)
-                                    }))}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                        <XAxis dataKey="day" stroke="#9CA3AF" label={{ value: 'Days', position: 'insideBottom', offset: -5 }} />
-                                        <YAxis stroke="#9CA3AF" label={{ value: 'RUL (%)', angle: -90, position: 'insideLeft' }} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                        <Legend />
-                                        <Area type="monotone" dataKey="upper" stackId="1" stroke="#10B981" fill="#10B981" fillOpacity={0.3} name="Upper Bound" />
-                                        <Area type="monotone" dataKey="rul" stackId="2" stroke="#EF4444" fill="#EF4444" fillOpacity={0.8} strokeWidth={3} name="Expected RUL" />
-                                        <Area type="monotone" dataKey="lower" stackId="3" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} name="Lower Bound" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'anomaly' && (
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-semibold">Anomaly Detection Analysis</h3>
-                                <div className="bg-slate-700 px-4 py-2 rounded-lg">
-                                    <span className="text-gray-400">Total Anomalies: </span>
-                                    <span className="font-bold text-red-400">{anomalies.filter(a => a.isAnomaly).length}</span>
-                                    <span className="text-gray-400"> / {anomalies.length}</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="text-sm text-gray-400 mb-2">Anomaly Rate</h4>
-                                    <p className="text-3xl font-bold text-red-400">
-                                        {(anomalies.filter(a => a.isAnomaly).length / anomalies.length * 100).toFixed(2)}%
-                                    </p>
-                                </div>
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="text-sm text-gray-400 mb-2">Detection Method</h4>
-                                    <p className="text-lg font-semibold text-blue-400">Isolation Forest</p>
-                                    <p className="text-sm text-gray-500">Z-Score Threshold: 2.5</p>
-                                </div>
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="text-sm text-gray-400 mb-2">Confidence</h4>
-                                    <p className="text-3xl font-bold text-green-400">94.5%</p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-lg font-semibold mb-4">Anomaly Detection Over Time</h4>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <ScatterChart>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                        <XAxis dataKey="time" stroke="#9CA3AF" label={{ value: 'Time (s)', position: 'insideBottom', offset: -5 }} />
-                                        <YAxis dataKey="value" stroke="#9CA3AF" label={{ value: `Value (${getSensorUnit()})`, angle: -90, position: 'insideLeft' }} />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                        <Legend />
-                                        <Scatter data={anomalies.filter(a => !a.isAnomaly).slice(0, 200)} fill="#10B981" name="Normal" />
-                                        <Scatter data={anomalies.filter(a => a.isAnomaly)} fill="#EF4444" name="Anomaly" shape="star" />
-                                    </ScatterChart>
-                                </ResponsiveContainer>
-                            </div>
-
-                            <div>
-                                <h4 className="text-lg font-semibold mb-4">Anomaly Score Distribution</h4>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <BarChart data={anomalies.slice(0, 100).map((a, i) => ({ ...a, index: i }))}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                        <XAxis dataKey="index" stroke="#9CA3AF" />
-                                        <YAxis stroke="#9CA3AF" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                        <Bar dataKey="score" fill="#8B5CF6" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-
-                            <div className="bg-slate-700 rounded-lg p-4">
-                                <h4 className="font-semibold mb-3 text-blue-400">Recent Anomalies</h4>
-                                <div className="space-y-2 max-h-60 overflow-y-auto">
-                                    {anomalies.filter(a => a.isAnomaly).slice(-10).reverse().map((anomaly, idx) => (
-                                        <div key={idx} className="flex justify-between items-center bg-slate-600 p-2 rounded">
-                                            <span className="text-sm">Time: {anomaly.time}s</span>
-                                            <span className="text-sm">Value: {anomaly.value}</span>
-                                            <span className="text-sm font-semibold text-red-400">Score: {anomaly.score}</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold mb-3 text-blue-400">Predicted Failure Modes</h4>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-sm">Calibration Drift</span>
+                                                    <span className="text-sm font-semibold">{(degradation * 8).toFixed(1)}%</span>
+                                                </div>
+                                                <div className="w-full bg-slate-600 rounded-full h-2">
+                                                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${degradation * 8}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-sm">Noise Increase</span>
+                                                    <span className="text-sm font-semibold">{(degradation * 6).toFixed(1)}%</span>
+                                                </div>
+                                                <div className="w-full bg-slate-600 rounded-full h-2">
+                                                    <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${degradation * 6}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-sm">Temperature Sensitivity</span>
+                                                    <span className="text-sm font-semibold">{(degradation * 5).toFixed(1)}%</span>
+                                                </div>
+                                                <div className="w-full bg-slate-600 rounded-full h-2">
+                                                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${degradation * 5}%` }}></div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold mb-2 text-blue-400">Maintenance Schedule</h4>
+                                        <ul className="space-y-2 text-sm">
+                                            {parseFloat(rul) < 50 && (
+                                                <li className="flex items-start">
+                                                    <span className="text-orange-400 mr-2">⚠️</span>
+                                                    <span>Schedule calibration within 7 days</span>
+                                                </li>
+                                            )}
+                                            {parseFloat(rul) < 30 && (
+                                                <li className="flex items-start">
+                                                    <span className="text-red-400 mr-2">🔴</span>
+                                                    <span>Critical: Plan sensor replacement immediately</span>
+                                                </li>
+                                            )}
+                                            {parseFloat(rul) >= 50 && (
+                                                <li className="flex items-start">
+                                                    <span className="text-green-400 mr-2">✓</span>
+                                                    <span>Sensor operating within normal parameters</span>
+                                                </li>
+                                            )}
+                                            <li className="flex items-start">
+                                                <span className="text-blue-400 mr-2">📅</span>
+                                                <span>Next check: {Math.ceil((100 - degradation) * 2)} days</span>
+                                            </li>
+                                            <li className="flex items-start">
+                                                <span className="text-purple-400 mr-2">🔧</span>
+                                                <span>Regular calibration every {parseFloat(rul) > 70 ? '30' : '15'} days</span>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
 
-                    {activeTab === 'advanced' && (
-                        <div className="space-y-6">
-                            <h3 className="text-xl font-semibold mb-4">Advanced Signal Processing</h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <h4 className="text-lg font-semibold mb-4">Fast Fourier Transform (FFT)</h4>
+                                    <h4 className="text-lg font-semibold mb-4">Degradation Forecast (Next 100 Days)</h4>
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <LineChart data={fftData}>
+                                        <AreaChart data={Array.from({ length: 20 }, (_, i) => ({
+                                            day: i * 5,
+                                            rul: Math.max(0, 100 - degradation * 10 - i * 3),
+                                            upper: Math.max(0, 100 - degradation * 10 - i * 2.5),
+                                            lower: Math.max(0, 100 - degradation * 10 - i * 3.5)
+                                        }))}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                            <XAxis dataKey="freq" stroke="#9CA3AF" label={{ value: 'Frequency (Hz)', position: 'insideBottom', offset: -5 }} />
-                                            <YAxis stroke="#9CA3AF" label={{ value: 'Magnitude', angle: -90, position: 'insideLeft' }} />
+                                            <XAxis dataKey="day" stroke="#9CA3AF" label={{ value: 'Days', position: 'insideBottom', offset: -5 }} />
+                                            <YAxis stroke="#9CA3AF" label={{ value: 'RUL (%)', angle: -90, position: 'insideLeft' }} />
                                             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                            <Line type="monotone" dataKey="magnitude" stroke="#8B5CF6" dot={false} strokeWidth={2} />
-                                        </LineChart>
+                                            <Legend />
+                                            <Area type="monotone" dataKey="upper" stackId="1" stroke="#10B981" fill="#10B981" fillOpacity={0.3} name="Upper Bound" />
+                                            <Area type="monotone" dataKey="rul" stackId="2" stroke="#EF4444" fill="#EF4444" fillOpacity={0.8} strokeWidth={3} name="Expected RUL" />
+                                            <Area type="monotone" dataKey="lower" stackId="3" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} name="Lower Bound" />
+                                        </AreaChart>
                                     </ResponsiveContainer>
-                                    <p className="text-sm text-gray-400 mt-2">Frequency domain analysis reveals dominant signal components and noise characteristics</p>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    {
+                        activeTab === 'anomaly' && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-xl font-semibold">Anomaly Detection Analysis</h3>
+                                    <div className="bg-slate-700 px-4 py-2 rounded-lg">
+                                        <span className="text-gray-400">Total Anomalies: </span>
+                                        <span className="font-bold text-red-400">{anomalies.filter(a => a.isAnomaly).length}</span>
+                                        <span className="text-gray-400"> / {anomalies.length}</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="text-sm text-gray-400 mb-2">Anomaly Rate</h4>
+                                        <p className="text-3xl font-bold text-red-400">
+                                            {(anomalies.filter(a => a.isAnomaly).length / anomalies.length * 100).toFixed(2)}%
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="text-sm text-gray-400 mb-2">Detection Method</h4>
+                                        <p className="text-lg font-semibold text-blue-400">Isolation Forest</p>
+                                        <p className="text-sm text-gray-500">Z-Score Threshold: 2.5</p>
+                                    </div>
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="text-sm text-gray-400 mb-2">Confidence</h4>
+                                        <p className="text-3xl font-bold text-green-400">94.5%</p>
+                                    </div>
                                 </div>
 
                                 <div>
-                                    <h4 className="text-lg font-semibold mb-4">Wavelet Transform (Haar)</h4>
+                                    <h4 className="text-lg font-semibold mb-4">Anomaly Detection Over Time</h4>
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <LineChart data={waveletData}>
+                                        <ScatterChart>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                            <XAxis dataKey="time" stroke="#9CA3AF" label={{ value: 'Time (s)', position: 'insideBottom', offset: -5 }} />
+                                            <YAxis dataKey="value" stroke="#9CA3AF" label={{ value: `Value (${getSensorUnit()})`, angle: -90, position: 'insideLeft' }} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                            <Legend />
+                                            <Scatter data={anomalies.filter(a => !a.isAnomaly).slice(0, 200)} fill="#10B981" name="Normal" />
+                                            <Scatter data={anomalies.filter(a => a.isAnomaly)} fill="#EF4444" name="Anomaly" shape="star" />
+                                        </ScatterChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-lg font-semibold mb-4">Anomaly Score Distribution</h4>
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <BarChart data={anomalies.slice(0, 100).map((a, i) => ({ ...a, index: i }))}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                             <XAxis dataKey="index" stroke="#9CA3AF" />
                                             <YAxis stroke="#9CA3AF" />
                                             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                            <Legend />
-                                            <Line type="monotone" dataKey="approximation" stroke="#10B981" dot={false} strokeWidth={2} name="Approximation" />
-                                            <Line type="monotone" dataKey="detail" stroke="#F59E0B" dot={false} strokeWidth={2} name="Detail" />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                    <p className="text-sm text-gray-400 mt-2">Wavelet decomposition separates signal into different frequency scales</p>
-                                </div>
-                            </div>
-
-                            {comparisonMode && (
-                                <div>
-                                    <h4 className="text-lg font-semibold mb-4">Multi-Sensor Comparison</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                        <div className="bg-slate-700 rounded-lg p-4">
-                                            <h5 className="font-semibold mb-2 text-blue-400">Sensor 1 (Current)</h5>
-                                            <div className="space-y-1 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span>Mean:</span>
-                                                    <span>{features?.mean}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>SNR:</span>
-                                                    <span>{features?.snr}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>RUL:</span>
-                                                    <span>{rul}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-slate-700 rounded-lg p-4">
-                                            <h5 className="font-semibold mb-2 text-orange-400">Sensor 2 (Comparison)</h5>
-                                            <div className="space-y-1 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span>Mean:</span>
-                                                    <span>{extractFeatures(secondSensorData).mean}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>SNR:</span>
-                                                    <span>{extractFeatures(secondSensorData).snr}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>RUL:</span>
-                                                    <span>{Math.max(0, 100 - (degradation - 2) * 10).toFixed(1)}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <ResponsiveContainer width="100%" height={300}>
-                                        <LineChart>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                            <XAxis dataKey="time" stroke="#9CA3AF" />
-                                            <YAxis stroke="#9CA3AF" />
-                                            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                            <Legend />
-                                            <Line data={sensorData.slice(0, 200)} type="monotone" dataKey="value" stroke="#3B82F6" dot={false} strokeWidth={2} name="Sensor 1" />
-                                            <Line data={secondSensorData.slice(0, 200)} type="monotone" dataKey="value" stroke="#F59E0B" dot={false} strokeWidth={2} name="Sensor 2" />
-                                        </LineChart>
+                                            <Bar dataKey="score" fill="#8B5CF6" />
+                                        </BarChart>
                                     </ResponsiveContainer>
                                 </div>
-                            )}
 
-                            <div className="bg-slate-700 rounded-lg p-4">
-                                <h4 className="font-semibold mb-3 text-blue-400">Advanced Analytics Summary</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-400">Dominant Frequency</p>
-                                        <p className="text-xl font-bold">{fftData[0]?.freq || 0} Hz</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400">Wavelet Energy</p>
-                                        <p className="text-xl font-bold">{(Math.random() * 100).toFixed(2)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400">Signal Complexity</p>
-                                        <p className="text-xl font-bold">{(Math.random() * 10).toFixed(2)}</p>
+                                <div className="bg-slate-700 rounded-lg p-4">
+                                    <h4 className="font-semibold mb-3 text-blue-400">Recent Anomalies</h4>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                                        {anomalies.filter(a => a.isAnomaly).slice(-10).reverse().map((anomaly, idx) => (
+                                            <div key={idx} className="flex justify-between items-center bg-slate-600 p-2 rounded">
+                                                <span className="text-sm">Time: {anomaly.time}s</span>
+                                                <span className="text-sm">Value: {anomaly.value}</span>
+                                                <span className="text-sm font-semibold text-red-400">Score: {anomaly.score}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
 
-                    {/* Deep Learning Tab */}
-                    {activeTab === 'deeplearning' && (
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center flex-wrap gap-2">
-                                <h3 className="text-xl font-semibold text-purple-400">🧠 LSTM Neural Network for RUL Prediction</h3>
-                                <div className="flex items-center gap-2">
-                                    {lstmStatus.pretrained_available && (
-                                        <div className="px-3 py-1 rounded-full text-sm bg-blue-600">
-                                            🎓 Pre-Trained on Colab GPU
-                                        </div>
-                                    )}
-                                    <div className={`px-3 py-1 rounded-full text-sm ${lstmStatus.tensorflow_available ? 'bg-green-600' : 'bg-red-600'}`}>
-                                        {lstmStatus.tensorflow_available ? '✅ TensorFlow Ready' : '❌ TensorFlow Not Installed'}
-                                    </div>
-                                </div>
-                            </div>
+                    {
+                        activeTab === 'advanced' && (
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-semibold mb-4">Advanced Signal Processing</h3>
 
-                            {/* Pre-trained Model Notice */}
-                            {lstmStatus.pretrained_available && lstmHistory && (
-                                <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-4 border border-blue-500/30">
-                                    <div className="flex items-center justify-between flex-wrap gap-3">
-                                        <div>
-                                            <h4 className="font-semibold text-blue-300">✅ Pre-Trained Model Ready</h4>
-                                            <p className="text-sm text-gray-300 mt-1">
-                                                Trained on Google Colab with {lstmHistory.training_samples || 5000} samples over {lstmHistory.epochs} epochs
-                                            </p>
-                                        </div>
-                                        <a
-                                            href="https://colab.research.google.com/github/consixdent10/mems-ml-system/blob/main/notebooks/LSTM_Training_Colab.ipynb"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-semibold transition"
-                                        >
-                                            🔗 Open Training Notebook in Colab
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Training Options */}
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="font-semibold mb-4 text-purple-400">LSTM Training Options</h4>
-
-                                    {/* Colab Training - Primary Option */}
-                                    <div className="mb-4 p-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 rounded-lg border border-yellow-600/30">
-                                        <h5 className="font-semibold text-yellow-400 mb-2">🚀 Recommended: Train with GPU</h5>
-                                        <p className="text-sm text-gray-300 mb-3">
-                                            Train on Google Colab with free GPU. ~100x faster than CPU training!
-                                        </p>
-                                        <a
-                                            href="https://colab.research.google.com/github/consixdent10/mems-ml-system/blob/main/notebooks/LSTM_Training_Colab.ipynb"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-block w-full text-center py-3 px-4 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold transition"
-                                        >
-                                            🧠 Train LSTM with GPU in Colab
-                                        </a>
-                                        <p className="text-xs text-gray-400 mt-2 text-center">
-                                            Opens Google Colab → Run all cells → Auto-uploads to GitHub
-                                        </p>
-                                    </div>
-
-                                    {/* Model Status */}
-                                    {lstmHistory && (
-                                        <div className="p-3 bg-slate-600 rounded-lg">
-                                            <p className="text-green-400 font-semibold">✅ Pre-Trained Model Loaded</p>
-                                            <p className="text-sm text-gray-300">Epochs: {lstmHistory.epochs || lstmHistory.epochs_trained}</p>
-                                            <p className="text-sm text-gray-300">Final Loss: {lstmHistory.loss[lstmHistory.loss.length - 1]?.toFixed(4) || lstmHistory.final_loss?.toFixed(4)}</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Training Loss Chart */}
-                                <div className="bg-slate-700 rounded-lg p-4">
-                                    <h4 className="font-semibold mb-4 text-purple-400">Training Progress</h4>
-                                    {lstmHistory ? (
-                                        <ResponsiveContainer width="100%" height={250}>
-                                            <LineChart data={lstmHistory.loss.map((loss, idx) => ({
-                                                epoch: idx + 1,
-                                                loss: loss,
-                                                val_loss: lstmHistory.val_loss[idx] || null
-                                            }))}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h4 className="text-lg font-semibold mb-4">Fast Fourier Transform (FFT)</h4>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <LineChart data={fftData}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                <XAxis dataKey="epoch" stroke="#9CA3AF" />
+                                                <XAxis dataKey="freq" stroke="#9CA3AF" label={{ value: 'Frequency (Hz)', position: 'insideBottom', offset: -5 }} />
+                                                <YAxis stroke="#9CA3AF" label={{ value: 'Magnitude', angle: -90, position: 'insideLeft' }} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                                <Line type="monotone" dataKey="magnitude" stroke="#8B5CF6" dot={false} strokeWidth={2} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                        <p className="text-sm text-gray-400 mt-2">Frequency domain analysis reveals dominant signal components and noise characteristics</p>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-lg font-semibold mb-4">Wavelet Transform (Haar)</h4>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <LineChart data={waveletData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                <XAxis dataKey="index" stroke="#9CA3AF" />
                                                 <YAxis stroke="#9CA3AF" />
                                                 <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
                                                 <Legend />
-                                                <Line type="monotone" dataKey="loss" stroke="#8B5CF6" strokeWidth={2} name="Training Loss" dot={false} />
-                                                <Line type="monotone" dataKey="val_loss" stroke="#F59E0B" strokeWidth={2} name="Validation Loss" dot={false} />
+                                                <Line type="monotone" dataKey="approximation" stroke="#10B981" dot={false} strokeWidth={2} name="Approximation" />
+                                                <Line type="monotone" dataKey="detail" stroke="#F59E0B" dot={false} strokeWidth={2} name="Detail" />
                                             </LineChart>
                                         </ResponsiveContainer>
-                                    ) : (
-                                        <div className="h-64 flex items-center justify-center text-gray-500">
-                                            <p>Train the LSTM model to see the loss curve</p>
+                                        <p className="text-sm text-gray-400 mt-2">Wavelet decomposition separates signal into different frequency scales</p>
+                                    </div>
+                                </div>
+
+                                {comparisonMode && (
+                                    <div>
+                                        <h4 className="text-lg font-semibold mb-4">Multi-Sensor Comparison</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div className="bg-slate-700 rounded-lg p-4">
+                                                <h5 className="font-semibold mb-2 text-blue-400">Sensor 1 (Current)</h5>
+                                                <div className="space-y-1 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span>Mean:</span>
+                                                        <span>{features?.mean}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>SNR:</span>
+                                                        <span>{features?.snr}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>RUL:</span>
+                                                        <span>{rul}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-700 rounded-lg p-4">
+                                                <h5 className="font-semibold mb-2 text-orange-400">Sensor 2 (Comparison)</h5>
+                                                <div className="space-y-1 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span>Mean:</span>
+                                                        <span>{extractFeatures(secondSensorData).mean}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>SNR:</span>
+                                                        <span>{extractFeatures(secondSensorData).snr}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>RUL:</span>
+                                                        <span>{Math.max(0, 100 - (degradation - 2) * 10).toFixed(1)}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )}
+
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <LineChart>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                <XAxis dataKey="time" stroke="#9CA3AF" />
+                                                <YAxis stroke="#9CA3AF" />
+                                                <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                                <Legend />
+                                                <Line data={sensorData.slice(0, 200)} type="monotone" dataKey="value" stroke="#3B82F6" dot={false} strokeWidth={2} name="Sensor 1" />
+                                                <Line data={secondSensorData.slice(0, 200)} type="monotone" dataKey="value" stroke="#F59E0B" dot={false} strokeWidth={2} name="Sensor 2" />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
+
+                                <div className="bg-slate-700 rounded-lg p-4">
+                                    <h4 className="font-semibold mb-3 text-blue-400">Advanced Analytics Summary</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <p className="text-sm text-gray-400">Dominant Frequency</p>
+                                            <p className="text-xl font-bold">{fftData[0]?.freq || 0} Hz</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-400">Wavelet Energy</p>
+                                            <p className="text-xl font-bold">{(Math.random() * 100).toFixed(2)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-400">Signal Complexity</p>
+                                            <p className="text-xl font-bold">{(Math.random() * 10).toFixed(2)}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        )
+                    }
 
-                            {/* Info Card */}
-                            <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-lg p-4 border border-purple-500/30">
-                                <h4 className="font-semibold text-purple-300 mb-2">About LSTM for RUL Prediction</h4>
-                                <p className="text-sm text-gray-300">
-                                    Long Short-Term Memory (LSTM) networks are specialized neural networks designed for sequential data.
-                                    Unlike traditional ML models, LSTMs can learn temporal patterns in sensor readings over time,
-                                    making them ideal for predictive maintenance.
-                                </p>
+                    {/* Deep Learning Tab */}
+                    {
+                        activeTab === 'deeplearning' && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center flex-wrap gap-2">
+                                    <h3 className="text-xl font-semibold text-purple-400">🧠 LSTM Neural Network for RUL Prediction</h3>
+                                    <div className="flex items-center gap-2">
+                                        {lstmStatus.pretrained_available && (
+                                            <div className="px-3 py-1 rounded-full text-sm bg-blue-600">
+                                                🎓 Pre-Trained on Colab GPU
+                                            </div>
+                                        )}
+                                        <div className={`px-3 py-1 rounded-full text-sm ${lstmStatus.tensorflow_available ? 'bg-green-600' : 'bg-red-600'}`}>
+                                            {lstmStatus.tensorflow_available ? '✅ TensorFlow Ready' : '❌ TensorFlow Not Installed'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Pre-trained Model Notice */}
+                                {lstmStatus.pretrained_available && lstmHistory && (
+                                    <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-4 border border-blue-500/30">
+                                        <div className="flex items-center justify-between flex-wrap gap-3">
+                                            <div>
+                                                <h4 className="font-semibold text-blue-300">✅ Pre-Trained Model Ready</h4>
+                                                <p className="text-sm text-gray-300 mt-1">
+                                                    Trained on Google Colab with {lstmHistory.training_samples || 5000} samples over {lstmHistory.epochs} epochs
+                                                </p>
+                                            </div>
+                                            <a
+                                                href="https://colab.research.google.com/github/consixdent10/mems-ml-system/blob/main/notebooks/LSTM_Training_Colab.ipynb"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm font-semibold transition"
+                                            >
+                                                🔗 Open Training Notebook in Colab
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Training Options */}
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold mb-4 text-purple-400">LSTM Training Options</h4>
+
+                                        {/* Colab Training - Primary Option */}
+                                        <div className="mb-4 p-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 rounded-lg border border-yellow-600/30">
+                                            <h5 className="font-semibold text-yellow-400 mb-2">🚀 Recommended: Train with GPU</h5>
+                                            <p className="text-sm text-gray-300 mb-3">
+                                                Train on Google Colab with free GPU. ~100x faster than CPU training!
+                                            </p>
+                                            <a
+                                                href="https://colab.research.google.com/github/consixdent10/mems-ml-system/blob/main/notebooks/LSTM_Training_Colab.ipynb"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-block w-full text-center py-3 px-4 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold transition"
+                                            >
+                                                🧠 Train LSTM with GPU in Colab
+                                            </a>
+                                            <p className="text-xs text-gray-400 mt-2 text-center">
+                                                Opens Google Colab → Run all cells → Auto-uploads to GitHub
+                                            </p>
+                                        </div>
+
+                                        {/* Model Status */}
+                                        {lstmHistory && (
+                                            <div className="p-3 bg-slate-600 rounded-lg">
+                                                <p className="text-green-400 font-semibold">✅ Pre-Trained Model Loaded</p>
+                                                <p className="text-sm text-gray-300">Epochs: {lstmHistory.epochs || lstmHistory.epochs_trained}</p>
+                                                <p className="text-sm text-gray-300">Final Loss: {lstmHistory.loss[lstmHistory.loss.length - 1]?.toFixed(4) || lstmHistory.final_loss?.toFixed(4)}</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Training Loss Chart */}
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold mb-4 text-purple-400">Training Progress</h4>
+                                        {lstmHistory ? (
+                                            <ResponsiveContainer width="100%" height={250}>
+                                                <LineChart data={lstmHistory.loss.map((loss, idx) => ({
+                                                    epoch: idx + 1,
+                                                    loss: loss,
+                                                    val_loss: lstmHistory.val_loss[idx] || null
+                                                }))}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                    <XAxis dataKey="epoch" stroke="#9CA3AF" />
+                                                    <YAxis stroke="#9CA3AF" />
+                                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                                    <Legend />
+                                                    <Line type="monotone" dataKey="loss" stroke="#8B5CF6" strokeWidth={2} name="Training Loss" dot={false} />
+                                                    <Line type="monotone" dataKey="val_loss" stroke="#F59E0B" strokeWidth={2} name="Validation Loss" dot={false} />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="h-64 flex items-center justify-center text-gray-500">
+                                                <p>Train the LSTM model to see the loss curve</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Info Card */}
+                                <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-lg p-4 border border-purple-500/30">
+                                    <h4 className="font-semibold text-purple-300 mb-2">About LSTM for RUL Prediction</h4>
+                                    <p className="text-sm text-gray-300">
+                                        Long Short-Term Memory (LSTM) networks are specialized neural networks designed for sequential data.
+                                        Unlike traditional ML models, LSTMs can learn temporal patterns in sensor readings over time,
+                                        making them ideal for predictive maintenance.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )
+                    }
+                </div >
 
                 {/* Footer */}
-                <div className="mt-8 text-center text-gray-500 text-sm">
+                < div className="mt-8 text-center text-gray-500 text-sm" >
                     <p>MEMS Sensor ML Analysis System</p>
                     <p className="mt-1">Real-time Performance Monitoring & Predictive Maintenance Platform</p>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Email Alert Modal */}
-            {showEmailModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 border border-slate-600 shadow-2xl">
-                        {!emailSent ? (
-                            <>
-                                <div className="flex items-center mb-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${currentAlertType === 'critical' ? 'bg-red-500' : 'bg-orange-500'
-                                        }`}>
-                                        <Mail size={20} className="text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold">Send Alert Notification</h3>
-                                        <p className="text-sm text-gray-400">
-                                            {currentAlertType === 'critical' ? 'Critical Alert' : 'Warning Alert'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="bg-slate-700 rounded-lg p-4 mb-4">
-                                    <h4 className="text-sm font-semibold text-gray-400 mb-2">Alert Details</h4>
-                                    <div className="space-y-1 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Sensor:</span>
-                                            <span>{sensorType.toUpperCase()}</span>
+            {
+                showEmailModal && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4 border border-slate-600 shadow-2xl">
+                            {!emailSent ? (
+                                <>
+                                    <div className="flex items-center mb-4">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${currentAlertType === 'critical' ? 'bg-red-500' : 'bg-orange-500'
+                                            }`}>
+                                            <Mail size={20} className="text-white" />
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">RUL:</span>
-                                            <span className={parseFloat(rul) < 30 ? 'text-red-400' : parseFloat(rul) < 50 ? 'text-yellow-400' : 'text-green-400'}>
-                                                {parseFloat(rul).toFixed(1)}%
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Status:</span>
-                                            <span className={currentAlertType === 'critical' ? 'text-red-400' : 'text-yellow-400'}>
-                                                {currentAlertType === 'critical' ? 'CRITICAL' : 'WARNING'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Time:</span>
-                                            <span>{new Date().toLocaleTimeString()}</span>
+                                        <div>
+                                            <h3 className="text-xl font-bold">Send Alert Notification</h3>
+                                            <p className="text-sm text-gray-400">
+                                                {currentAlertType === 'critical' ? 'Critical Alert' : 'Warning Alert'}
+                                            </p>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium mb-2">Recipient Email</label>
-                                    <input
-                                        type="email"
-                                        value={emailRecipient}
-                                        onChange={(e) => setEmailRecipient(e.target.value)}
-                                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Enter email address"
-                                    />
-                                </div>
+                                    <div className="bg-slate-700 rounded-lg p-4 mb-4">
+                                        <h4 className="text-sm font-semibold text-gray-400 mb-2">Alert Details</h4>
+                                        <div className="space-y-1 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">Sensor:</span>
+                                                <span>{sensorType.toUpperCase()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">RUL:</span>
+                                                <span className={parseFloat(rul) < 30 ? 'text-red-400' : parseFloat(rul) < 50 ? 'text-yellow-400' : 'text-green-400'}>
+                                                    {parseFloat(rul).toFixed(1)}%
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">Status:</span>
+                                                <span className={currentAlertType === 'critical' ? 'text-red-400' : 'text-yellow-400'}>
+                                                    {currentAlertType === 'critical' ? 'CRITICAL' : 'WARNING'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">Time:</span>
+                                                <span>{new Date().toLocaleTimeString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowEmailModal(false)}
-                                        className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={sendEmailNotification}
-                                        disabled={emailSending}
-                                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg transition flex items-center justify-center"
-                                    >
-                                        {emailSending ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                                Sending...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Mail size={16} className="mr-2" />
-                                                Send Email
-                                            </>
-                                        )}
-                                    </button>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium mb-2">Recipient Email</label>
+                                        <input
+                                            type="email"
+                                            value={emailRecipient}
+                                            onChange={(e) => setEmailRecipient(e.target.value)}
+                                            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Enter email address"
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setShowEmailModal(false)}
+                                            className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={sendEmailNotification}
+                                            disabled={emailSending}
+                                            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 px-4 py-2 rounded-lg transition flex items-center justify-center"
+                                        >
+                                            {emailSending ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                                    Sending...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Mail size={16} className="mr-2" />
+                                                    Send Email
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center py-6">
+                                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-green-400 mb-2">Email Sent Successfully!</h3>
+                                    <p className="text-gray-400">
+                                        Alert notification sent to<br />
+                                        <span className="text-white">{emailRecipient}</span>
+                                    </p>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="text-center py-6">
-                                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-xl font-bold text-green-400 mb-2">Email Sent Successfully!</h3>
-                                <p className="text-gray-400">
-                                    Alert notification sent to<br />
-                                    <span className="text-white">{emailRecipient}</span>
-                                </p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
