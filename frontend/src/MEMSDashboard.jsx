@@ -2586,26 +2586,35 @@ const MEMSDashboard = () => {
                                     </div>
 
                                     {/* Actual vs Predicted Scatter Plot */}
-                                    {predictionsSample && predictionsSample.actual && (
-                                        <div className="mt-6">
-                                            <h3 className="text-xl font-semibold mb-4">Actual vs Predicted RUL (Best Model: {bestModel})</h3>
-                                            <ResponsiveContainer width="100%" height={350}>
-                                                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                                    <XAxis type="number" dataKey="actual" name="Actual RUL%" stroke="#9CA3AF" label={{ value: 'Actual RUL%', position: 'insideBottom', offset: -10 }} />
-                                                    <YAxis type="number" dataKey="predicted" name="Predicted RUL%" stroke="#9CA3AF" label={{ value: 'Predicted RUL%', angle: -90, position: 'insideLeft' }} />
-                                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                                    <Scatter
-                                                        name="Predictions"
-                                                        data={predictionsSample.actual.map((a, i) => ({ actual: a, predicted: predictionsSample.predicted[i] }))}
-                                                        fill="#3B82F6"
-                                                    />
-                                                    <ReferenceLine x={0} y={0} stroke="#EF4444" strokeDasharray="3 3" />
-                                                </ScatterChart>
-                                            </ResponsiveContainer>
-                                            <p className="text-sm text-gray-400 text-center mt-2">Points near the diagonal line indicate accurate predictions</p>
-                                        </div>
-                                    )}
+                                    {predictionsSample && predictionsSample.actual && (() => {
+                                        const scatterData = predictionsSample.actual.map((a, i) => ({ actual: a, predicted: predictionsSample.predicted[i] }));
+                                        const minVal = Math.min(...predictionsSample.actual, ...predictionsSample.predicted);
+                                        const maxVal = Math.max(...predictionsSample.actual, ...predictionsSample.predicted);
+                                        const bestModelData = modelResults.find(m => m.modelType === bestModel);
+                                        const bestR2 = bestModelData?.r2Score || 0;
+                                        return (
+                                            <div className="mt-6">
+                                                <h3 className="text-xl font-semibold mb-2">Actual vs Predicted RUL (Best Model: {bestModel})</h3>
+                                                <p className="text-sm text-gray-400 mb-4">Model R²: <span className={bestR2 >= 0.7 ? 'text-green-400' : 'text-yellow-400'}>{bestR2.toFixed(4)}</span></p>
+                                                <ResponsiveContainer width="100%" height={350}>
+                                                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                                                        <XAxis type="number" dataKey="actual" name="Actual RUL%" stroke="#9CA3AF" domain={[0, 100]} label={{ value: 'Actual RUL%', position: 'insideBottom', offset: -10 }} />
+                                                        <YAxis type="number" dataKey="predicted" name="Predicted RUL%" stroke="#9CA3AF" domain={[0, 100]} label={{ value: 'Predicted RUL%', angle: -90, position: 'insideLeft' }} />
+                                                        <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                                        {/* Ideal diagonal line y=x */}
+                                                        <ReferenceLine segment={[{ x: 0, y: 0 }, { x: 100, y: 100 }]} stroke="#10B981" strokeWidth={2} strokeDasharray="5 5" />
+                                                        <Scatter
+                                                            name="Predictions"
+                                                            data={scatterData}
+                                                            fill="#3B82F6"
+                                                        />
+                                                    </ScatterChart>
+                                                </ResponsiveContainer>
+                                                <p className="text-sm text-gray-400 text-center mt-2">Green diagonal = ideal (y=x). Points near line = accurate predictions.</p>
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* Performance Metrics Radar - Normalized Regression Scores */}
                                     <div className="mt-6">

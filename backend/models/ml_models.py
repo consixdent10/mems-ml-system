@@ -199,7 +199,8 @@ class MLModelTrainer:
         # Find best model (lowest RMSE)
         best_idx = min(range(len(results)), key=lambda i: results[i]['rmse'])
         self.best_model_name = results[best_idx]['modelType']
-        print(f"Best model: {self.best_model_name} (RMSE: {results[best_idx]['rmse']:.4f})")
+        self.best_model_r2 = results[best_idx]['r2Score']  # Store for confidence calculation
+        print(f"Best model: {self.best_model_name} (RMSE: {results[best_idx]['rmse']:.4f}, R²: {self.best_model_r2:.4f})")
         
         # Create predictions sample for scatter plot (max 200 points)
         best_pred = all_predictions[self.best_model_name]
@@ -269,12 +270,14 @@ class MLModelTrainer:
         # Clamp RUL to [0, 100]
         rul_prediction = float(np.clip(rul_prediction, 0, 100))
         
-        # Confidence based on model's R² score (simplified)
-        confidence = 0.85 if self.best_model_name else 0.7
+        # Dynamic confidence based on model's R² score
+        # R² ranges from -inf to 1, so we clamp and normalize
+        best_r2 = getattr(self, 'best_model_r2', 0.5)
+        confidence = float(max(0.3, min(0.99, (best_r2 + 1) / 2)))
         
         return {
             'rulPercent': round(rul_prediction, 2),
-            'confidence': confidence,
+            'confidence': round(confidence, 2),
             'model': model_name
         }
     
