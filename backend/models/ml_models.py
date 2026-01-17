@@ -270,10 +270,9 @@ class MLModelTrainer:
         # Clamp RUL to [0, 100]
         rul_prediction = float(np.clip(rul_prediction, 0, 100))
         
-        # Dynamic confidence based on model's R² score
-        # R² ranges from -inf to 1, so we clamp and normalize
+        # Dynamic confidence based on model's R² score (clamped to 0-1)
         best_r2 = getattr(self, 'best_model_r2', 0.5)
-        confidence = float(max(0.3, min(0.99, (best_r2 + 1) / 2)))
+        confidence = max(0.0, min(1.0, (best_r2 + 1) / 2))
         
         return {
             'rulPercent': round(rul_prediction, 2),
