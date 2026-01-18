@@ -579,15 +579,18 @@ const MEMSDashboard = () => {
             const response = await api.trainModels(sensorData);
             console.log('trainModels response:', response);
 
+            // Backend returns { models: { models: [], bestModel, predictionsSample }, metadata }
+            const modelsData = response.models || response;
+
             // Check if response has models
-            if (!response || !response.models || response.models.length === 0) {
+            if (!modelsData || !modelsData.models || modelsData.models.length === 0) {
                 throw new Error(`API returned empty results: ${JSON.stringify(response)}`);
             }
 
-            // Set model results from API (now returns { models, bestModel, predictionsSample })
-            setModelResults(response.models || []);
-            setBestModel(response.bestModel || null);
-            setPredictionsSample(response.predictionsSample || null);
+            // Set model results from API
+            setModelResults(modelsData.models || []);
+            setBestModel(modelsData.bestModel || null);
+            setPredictionsSample(modelsData.predictionsSample || null);
 
             // Get XAI analysis from backend
             console.log('Calling XAI API...');
