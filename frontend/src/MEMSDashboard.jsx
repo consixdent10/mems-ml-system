@@ -2,16 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, ScatterChart, Scatter, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area, Cell, ReferenceLine } from 'recharts';
 import { Activity, TrendingUp, AlertTriangle, Database, Brain, Download, Mail, FileText, Zap, Waves } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import emailjs from '@emailjs/browser';
 
 // Extracted modules
 import { api, API_BASE_URL } from './services/api';
 import { performFFT, waveletTransform } from './utils/signalProcessing';
 import { detectAnomalies } from './utils/anomalyDetection';
 import ModelsTab from './components/tabs/ModelsTab';
-
-// Initialize EmailJS with your public key
-emailjs.init('4nXkITVq3xI5eeQLO');
 
 // Note: api, performFFT, waveletTransform, detectAnomalies are now imported from modules
 
