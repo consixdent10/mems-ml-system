@@ -51,7 +51,7 @@ logs/
 # Environment
 .env
 .env.local
-.env.production
+# .env.production is committed for Vercel deployment
 
 # Build outputs
 frontend/dist/
