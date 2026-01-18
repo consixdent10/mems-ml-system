@@ -432,12 +432,12 @@ const MEMSDashboard = () => {
                 if (response.ok) {
                     const status = await response.json();
                     setLstmStatus(status);
-                    console.log('LSTM Status:', status);
+
 
                     // Auto-load pre-trained model's training history
                     if (status.pretrained_available && status.training_history) {
                         setLstmHistory(status.training_history);
-                        console.log('Pre-trained LSTM history loaded');
+
                     }
                 }
             } catch (error) {
@@ -705,7 +705,7 @@ const MEMSDashboard = () => {
     };
 
     const generateReport = () => {
-        console.log('Generate Report button clicked!');
+
 
         if (!features || !sensorData || sensorData.length === 0) {
             alert('⚠️ Please generate data first!\n\n1. Select a sensor type\n2. Click the "Generate" button\n3. Then click "Report"');
@@ -945,7 +945,7 @@ const MEMSDashboard = () => {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                console.log('Email sent successfully:', result);
+
                 setEmailSending(false);
                 setEmailSent(true);
 
