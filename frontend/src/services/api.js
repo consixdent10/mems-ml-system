@@ -1,6 +1,11 @@
 // API Configuration - Use environment variable for production, localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+if (!import.meta.env.VITE_API_URL && location.hostname !== "localhost") {
+    console.warn("VITE_API_URL is missing in production. API will fail.");
+}
+
+
 // API Helper Functions
 export const api = {
     generateData: async (sensorType, degradationLevel) => {
@@ -34,7 +39,10 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sensor_data: sensorData })
         });
-        if (!response.ok) throw new Error('Failed to train models');
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`trainModels failed: ${response.status} ${errText}`);
+        }
         return response.json();
     },
 
@@ -44,7 +52,10 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sensor_data: sensorData })
         });
-        if (!response.ok) throw new Error('Failed to get XAI analysis');
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`getXAIAnalysis failed: ${response.status} ${errText}`);
+        }
         return response.json();
     },
 

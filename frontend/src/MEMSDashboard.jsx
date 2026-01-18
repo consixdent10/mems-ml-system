@@ -419,6 +419,7 @@ const MEMSDashboard = () => {
     const [isLoadingData, setIsLoadingData] = useState(false);
     const [isLoadingUpload, setIsLoadingUpload] = useState(false);
     const [apiError, setApiError] = useState('');
+    const [trainError, setTrainError] = useState('');
 
     useEffect(() => {
         generateData();
@@ -570,6 +571,7 @@ const MEMSDashboard = () => {
     const trainModels = async () => {
         setIsTraining(true);
         setApiError('');
+        setTrainError('');
 
         try {
             // Call FastAPI backend for model training
@@ -591,6 +593,7 @@ const MEMSDashboard = () => {
 
         } catch (error) {
             console.error('Error training models:', error);
+            setTrainError(error.message || 'Train Models failed');
             setApiError('Failed to train models. Make sure the backend server is running.');
         } finally {
             setIsTraining(false);
@@ -1850,6 +1853,7 @@ const MEMSDashboard = () => {
                             isTraining={isTraining}
                             trainModels={trainModels}
                             getFeatureImportance={getFeatureImportance}
+                            trainError={trainError}
                         />
                     )}
 

@@ -15,19 +15,27 @@ const ModelsTab = ({
     predictionsSample,
     isTraining,
     trainModels,
-    getFeatureImportance
+    getFeatureImportance,
+    trainError
 }) => {
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold">ML Model Training & Comparison</h3>
-                <button
-                    onClick={trainModels}
-                    disabled={isTraining}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
-                >
-                    {isTraining ? 'Training...' : 'Train All Models'}
-                </button>
+            <div className="flex flex-col">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold">ML Model Training & Comparison</h3>
+                    <button
+                        onClick={trainModels}
+                        disabled={isTraining}
+                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
+                    >
+                        {isTraining ? 'Training...' : 'Train All Models'}
+                    </button>
+                </div>
+                {trainError && (
+                    <div className="mt-3 p-3 rounded bg-red-900/40 border border-red-500 text-red-200 text-sm">
+                        {trainError}
+                    </div>
+                )}
             </div>
 
             {modelResults.length > 0 && (
