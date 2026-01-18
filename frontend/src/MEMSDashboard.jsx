@@ -575,7 +575,14 @@ const MEMSDashboard = () => {
 
         try {
             // Call FastAPI backend for model training
+            console.log('Calling trainModels API with', sensorData.length, 'samples');
             const response = await api.trainModels(sensorData);
+            console.log('trainModels response:', response);
+
+            // Check if response has models
+            if (!response || !response.models || response.models.length === 0) {
+                throw new Error(`API returned empty results: ${JSON.stringify(response)}`);
+            }
 
             // Set model results from API (now returns { models, bestModel, predictionsSample })
             setModelResults(response.models || []);
@@ -583,7 +590,9 @@ const MEMSDashboard = () => {
             setPredictionsSample(response.predictionsSample || null);
 
             // Get XAI analysis from backend
+            console.log('Calling XAI API...');
             const xaiResponse = await api.getXAIAnalysis(sensorData);
+            console.log('XAI response:', xaiResponse);
 
             // Set XAI data
             setFeatureContributions(xaiResponse.feature_importance);
