@@ -931,6 +931,143 @@ const MEMSDashboard = () => {
         }
     };
 
+    // Generate XAI Summary PDF
+    const generateXAIPDF = () => {
+        if (!predictionExplanation) {
+            alert('Please train models first to generate XAI analysis');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const reportDate = new Date();
+
+        // Colors
+        const darkText = [31, 41, 55];
+        const blueAccent = [59, 130, 246];
+        const grayText = [107, 114, 128];
+
+        // Header
+        doc.setFillColor(30, 41, 59);
+        doc.rect(0, 0, 210, 35, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('XAI Analysis Summary', 105, 18, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Generated: ${reportDate.toLocaleString()}`, 105, 28, { align: 'center' });
+
+        let yPos = 50;
+
+        // Status Section
+        doc.setTextColor(...darkText);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Prediction Status', 20, yPos);
+        yPos += 10;
+
+        const statusColor = predictionExplanation.prediction === 'HEALTHY' ? [34, 197, 94] :
+            predictionExplanation.prediction === 'WARNING' ? [251, 146, 60] : [239, 68, 68];
+        doc.setTextColor(...statusColor);
+        doc.setFontSize(18);
+        doc.text(predictionExplanation.prediction, 20, yPos);
+        yPos += 10;
+
+        // Reason Banner
+        if (predictionExplanation.triggered_rule) {
+            doc.setTextColor(...grayText);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Reason: ${predictionExplanation.triggered_rule}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Rule: ${predictionExplanation.rule_reason}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Source: ${predictionExplanation.status_source || 'Rule-based thresholds'}`, 20, yPos);
+            yPos += 10;
+        }
+
+        // Status values
+        if (predictionExplanation.status_reason_details) {
+            const details = predictionExplanation.status_reason_details;
+            doc.setTextColor(...darkText);
+            doc.setFontSize(9);
+            doc.text(`SNR: ${details.snr} | Drift: ${details.drift} | Noise: ${details.noise} | Temp: ${details.temperature}°C | RUL: ${details.rul_percent}%`, 20, yPos);
+            yPos += 12;
+        }
+
+        // Confidence Section
+        doc.setTextColor(...blueAccent);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Model Confidence', 20, yPos);
+        yPos += 10;
+
+        doc.setTextColor(...darkText);
+        doc.setFontSize(12);
+        doc.text(`Overall: ${predictionExplanation.confidence.toFixed(1)}%`, 20, yPos);
+        doc.text(`Uncertainty: ${predictionExplanation.uncertainty.toFixed(1)}%`, 80, yPos);
+        yPos += 8;
+        doc.setFontSize(9);
+        doc.setTextColor(...grayText);
+        doc.text(`Source: ${predictionExplanation.confidence_source || 'Derived from best model R² and ensemble agreement'}`, 20, yPos);
+        yPos += 12;
+
+        // Top Contributing Factors
+        doc.setTextColor(...blueAccent);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Top Contributing Factors', 20, yPos);
+        yPos += 10;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        predictionExplanation.mainReasons?.forEach((reason, idx) => {
+            doc.setTextColor(...darkText);
+            doc.text(`${idx + 1}. ${reason.feature}: ${reason.contribution}`, 25, yPos);
+            const impactText = reason.impact_on_rul ? ` (${reason.impact_on_rul})` : '';
+            doc.setTextColor(...grayText);
+            doc.text(`${reason.direction} confidence${impactText}`, 100, yPos);
+            yPos += 7;
+        });
+        yPos += 8;
+
+        // Decision Rules Summary
+        doc.setTextColor(...blueAccent);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Decision Rules', 20, yPos);
+        yPos += 10;
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(34, 197, 94);
+        doc.text('Rule 1 (Healthy): SNR > 20 AND Drift < 0.01 AND Noise < 0.05', 25, yPos);
+        yPos += 6;
+        doc.setTextColor(251, 146, 60);
+        doc.text('Rule 2 (Warning): 10 < SNR < 20 OR Drift > 0.01 OR Noise > 0.05', 25, yPos);
+        yPos += 6;
+        doc.setTextColor(239, 68, 68);
+        doc.text('Rule 3 (Critical): SNR < 10 OR Drift > 0.05 OR RUL < 30%', 25, yPos);
+        yPos += 12;
+
+        // Explanation Method
+        doc.setTextColor(...grayText);
+        doc.setFontSize(8);
+        doc.text(`Explanation Method: ${predictionExplanation.explanation_method || 'SHAP-like Feature Attribution (Approximation)'}`, 20, yPos);
+
+        // Footer
+        doc.setFillColor(243, 244, 246);
+        doc.rect(0, 275, 210, 22, 'F');
+        doc.setTextColor(...grayText);
+        doc.setFontSize(9);
+        doc.text('MEMS Sensor ML Analysis - XAI Summary Report', 105, 285, { align: 'center' });
+
+        // Save
+        const fileName = `XAI_Summary_${reportDate.toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        alert(`✅ XAI Summary PDF downloaded!\\nFile: ${fileName}`);
+    };
+
     const sendAlert = (alertType) => {
         setCurrentAlertType(alertType);
         setEmailSent(false);
@@ -1880,15 +2017,26 @@ const MEMSDashboard = () => {
                                     </h3>
                                     <p className="text-gray-400 text-sm mt-1">Understanding model decisions and predictions</p>
                                 </div>
-                                {!predictionExplanation && (
-                                    <button
-                                        onClick={trainModels}
-                                        disabled={isTraining}
-                                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
-                                    >
-                                        {isTraining ? 'Training...' : 'Generate Explanations'}
-                                    </button>
-                                )}
+                                <div className="flex gap-3">
+                                    {predictionExplanation && (
+                                        <button
+                                            onClick={generateXAIPDF}
+                                            className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2"
+                                        >
+                                            <Download size={16} />
+                                            Download XAI PDF
+                                        </button>
+                                    )}
+                                    {!predictionExplanation && (
+                                        <button
+                                            onClick={trainModels}
+                                            disabled={isTraining}
+                                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
+                                        >
+                                            {isTraining ? 'Training...' : 'Generate Explanations'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {!predictionExplanation ? (
@@ -1918,9 +2066,35 @@ const MEMSDashboard = () => {
                                                         }`}>
                                                         {predictionExplanation.prediction}
                                                     </div>
+                                                    {/* Reason Banner */}
+                                                    {predictionExplanation.triggered_rule && (
+                                                        <div className="mt-3 p-3 rounded bg-slate-700 border border-slate-600">
+                                                            <p className="text-sm font-medium text-gray-300">
+                                                                <span className="text-blue-400">Reason:</span> {predictionExplanation.triggered_rule} — {predictionExplanation.rule_reason}
+                                                            </p>
+                                                            {predictionExplanation.status_reason_details && (
+                                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">SNR: {predictionExplanation.status_reason_details.snr}</span>
+                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">Drift: {predictionExplanation.status_reason_details.drift}</span>
+                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">Noise: {predictionExplanation.status_reason_details.noise}</span>
+                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">Temp: {predictionExplanation.status_reason_details.temperature}°C</span>
+                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">RUL: {predictionExplanation.status_reason_details.rul_percent}%</span>
+                                                                </div>
+                                                            )}
+                                                            <p className="text-xs text-gray-500 mt-2">Source: {predictionExplanation.status_source || 'Rule-based thresholds'}</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="bg-slate-800 rounded-lg p-4">
-                                                    <p className="text-sm text-gray-400 mb-2">Model Confidence</p>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <p className="text-sm text-gray-400">Model Confidence</p>
+                                                        <div className="relative group">
+                                                            <span className="cursor-help text-gray-500 hover:text-blue-400">ⓘ</span>
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs text-gray-300 w-64 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                                Confidence is derived from best model performance (R²) and agreement between models. Clamped to 30%–99% to avoid misleading extremes.
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                     <div className="flex items-end gap-2">
                                                         <span className="text-3xl font-bold text-blue-400">
                                                             {predictionExplanation.confidence.toFixed(1)}%
@@ -1947,10 +2121,17 @@ const MEMSDashboard = () => {
                                                                 <span className="font-semibold">{reason.feature}</span>
                                                                 <span className="text-blue-400 font-bold">{reason.contribution}</span>
                                                             </div>
-                                                            <p className="text-sm text-gray-400">
-                                                                {reason.direction === 'increases' ? '↑' : '↓'} {reason.direction} prediction confidence
-                                                            </p>
-                                                            <p className="text-xs text-gray-500 mt-1">Current value: {reason.value}</p>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-sm text-gray-400">
+                                                                    {reason.direction === 'increases' ? '↑' : '↓'} {reason.direction} confidence
+                                                                </span>
+                                                                {reason.impact_on_rul && (
+                                                                    <span className={`text-xs px-2 py-0.5 rounded ${reason.impact_type === 'bad' ? 'bg-red-900/50 text-red-300' : reason.impact_type === 'good' ? 'bg-green-900/50 text-green-300' : 'bg-gray-700 text-gray-300'}`}>
+                                                                        {reason.impact_on_rul}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-gray-500">Current: {typeof reason.value === 'number' ? reason.value.toFixed(4) : reason.value}</p>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1960,7 +2141,7 @@ const MEMSDashboard = () => {
                                         <div className="mt-4 bg-blue-900/30 border border-blue-500 rounded-lg p-4">
                                             <p className="text-sm">
                                                 <strong>Model Used:</strong> {predictionExplanation.modelUsed} •
-                                                <strong className="ml-2">Explanation Method:</strong> SHAP-based Feature Attribution
+                                                <strong className="ml-2">Explanation Method:</strong> {predictionExplanation.explanation_method || 'SHAP-like Feature Attribution (Approximation)'}
                                             </p>
                                         </div>
                                     </div>
@@ -1987,10 +2168,10 @@ const MEMSDashboard = () => {
 
                                     {/* SHAP Values */}
                                     <div className="bg-slate-700 rounded-lg p-6">
-                                        <h4 className="text-lg font-semibold mb-4 text-blue-400">SHAP Value Analysis</h4>
+                                        <h4 className="text-lg font-semibold mb-4 text-blue-400">Feature Contribution Analysis (SHAP-like)</h4>
                                         <p className="text-sm text-gray-400 mb-4">
-                                            SHAP (SHapley Additive exPlanations) values show how each feature contributes to pushing the prediction
-                                            from the base value (average prediction) toward the final prediction.
+                                            SHAP-like approximation values show how each feature contributes to pushing the prediction
+                                            from the base value (average prediction) toward the final prediction. Note: This is an approximation, not true SHAP.
                                         </p>
 
                                         <ResponsiveContainer width="100%" height={350}>
