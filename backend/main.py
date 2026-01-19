@@ -210,6 +210,36 @@ async def download_best_model():
         media_type="application/octet-stream"
     )
 
+
+class HealthReportRequest(BaseModel):
+    sensor_data: Optional[List[dict]] = None
+    degradation_level: Optional[int] = None
+
+
+@app.post("/api/health-report", tags=["Health Report"])
+async def get_health_report(request: HealthReportRequest):
+    """
+    Get unified health report with RUL, status, risks, forecast.
+    
+    This is the single source of truth for all sensor health data.
+    All tabs should use this endpoint for consistent values.
+    """
+    try:
+        from utils.health_report import build_health_report
+        
+        report = build_health_report(
+            sensor_data=request.sensor_data,
+            degradation_level=request.degradation_level
+        )
+        
+        return {
+            "success": True,
+            "health_report": report
+        }
+    except Exception as e:
+        print(f"Health report error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/generate-data", tags=["Data Generation"])
 async def generate_sensor_data(request: GenerateDataRequest):
     """

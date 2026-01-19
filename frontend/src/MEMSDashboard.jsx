@@ -431,6 +431,9 @@ const MEMSDashboard = () => {
         setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
     };
 
+    // Unified health report from backend
+    const [healthReport, setHealthReport] = useState(null);
+
     useEffect(() => {
         generateData();
     }, [sensorType, degradation]);
@@ -569,6 +572,17 @@ const MEMSDashboard = () => {
                 snr: response.features.snr,
                 anomalyCount: response.anomalies.filter(a => a.isAnomaly).length
             }].slice(-20));
+
+            // Fetch unified health report from backend
+            try {
+                const reportResponse = await api.healthReport(response.data, degradation);
+                if (reportResponse?.health_report) {
+                    setHealthReport(reportResponse.health_report);
+                }
+            } catch (hrError) {
+                console.error('Health report fetch failed:', hrError);
+                // Don't break data flow if health report fails
+            }
 
         } catch (error) {
             console.error('Error generating data:', error);
@@ -2384,25 +2398,42 @@ const MEMSDashboard = () => {
                                 <div className="bg-slate-700 rounded-lg p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
-                                            <h4 className="text-2xl font-bold text-blue-400">{rul}%</h4>
+                                            <h4 className="text-2xl font-bold text-blue-400">
+                                                {healthReport?.rul_percent?.toFixed(1) || rul}%
+                                            </h4>
                                             <p className="text-gray-400">Remaining Useful Life</p>
+                                            {healthReport?.triggered_rule && (
+                                                <p className="text-xs text-gray-500 mt-1">{healthReport.triggered_rule}</p>
+                                            )}
                                         </div>
-                                        <div className={`px-4 py-2 rounded-full ${parseFloat(rul) > 70 ? 'bg-green-600' :
-                                            parseFloat(rul) > 40 ? 'bg-orange-600' : 'bg-red-600'
+                                        <div className={`px-4 py-2 rounded-full ${healthReport?.status === 'HEALTHY' ? 'bg-green-600' :
+                                            healthReport?.status === 'WARNING' ? 'bg-orange-600' :
+                                                healthReport?.status === 'CRITICAL' ? 'bg-red-600' :
+                                                    parseFloat(rul) > 70 ? 'bg-green-600' :
+                                                        parseFloat(rul) > 40 ? 'bg-orange-600' : 'bg-red-600'
                                             }`}>
-                                            {parseFloat(rul) > 70 ? 'Healthy' :
-                                                parseFloat(rul) > 40 ? 'Warning' : 'Critical'}
+                                            {healthReport?.status || (parseFloat(rul) > 70 ? 'HEALTHY' :
+                                                parseFloat(rul) > 40 ? 'WARNING' : 'CRITICAL')}
                                         </div>
                                     </div>
 
                                     <div className="w-full bg-slate-600 rounded-full h-4">
                                         <div
-                                            className={`h-4 rounded-full transition-all ${parseFloat(rul) > 70 ? 'bg-green-500' :
-                                                parseFloat(rul) > 40 ? 'bg-orange-500' : 'bg-red-500'
+                                            className={`h-4 rounded-full transition-all ${healthReport?.status === 'HEALTHY' ? 'bg-green-500' :
+                                                healthReport?.status === 'WARNING' ? 'bg-orange-500' :
+                                                    healthReport?.status === 'CRITICAL' ? 'bg-red-500' :
+                                                        parseFloat(rul) > 70 ? 'bg-green-500' :
+                                                            parseFloat(rul) > 40 ? 'bg-orange-500' : 'bg-red-500'
                                                 }`}
-                                            style={{ width: `${rul}%` }}
+                                            style={{ width: `${healthReport?.rul_percent || rul}%` }}
                                         />
                                     </div>
+
+                                    {healthReport?.rule_reason && (
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            <strong>Reason:</strong> {healthReport.rule_reason}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2411,10 +2442,10 @@ const MEMSDashboard = () => {
                                         <p className="text-xs text-gray-500 mb-3">Risk Level: 0-30% Low (green) | 30-70% Medium (orange) | 70-100% High (red)</p>
                                         <div className="space-y-3">
                                             {(() => {
-                                                // Calculate clamped risk scores
-                                                const driftRisk = Math.min(100, Math.max(0, degradation * 1.2 + 5));
-                                                const noiseRisk = Math.min(100, Math.max(0, degradation * 1.0 + 3));
-                                                const tempRisk = Math.min(100, Math.max(0, degradation * 0.8 + 2));
+                                                // Use backend risks if available, fallback to local calculation
+                                                const driftRisk = healthReport?.failure_risks?.drift_risk ?? Math.min(100, degradation * 1.2 + 5);
+                                                const noiseRisk = healthReport?.failure_risks?.noise_risk ?? Math.min(100, degradation * 1.0 + 3);
+                                                const tempRisk = healthReport?.failure_risks?.temp_risk ?? Math.min(100, degradation * 0.8 + 2);
 
                                                 const getRiskColor = (value) => {
                                                     if (value >= 70) return { bar: 'bg-red-500', text: 'text-red-400' };
@@ -2460,31 +2491,39 @@ const MEMSDashboard = () => {
                                     <div className="bg-slate-700 rounded-lg p-4">
                                         <h4 className="font-semibold mb-2 text-blue-400">Maintenance Schedule</h4>
                                         <ul className="space-y-2 text-sm">
-                                            {parseFloat(rul) < 50 && (
-                                                <li className="flex items-start">
-                                                    <span className="text-orange-400 mr-2">⚠️</span>
-                                                    <span>Schedule calibration within 7 days</span>
+                                            {healthReport?.maintenance_schedule?.notes?.map((note, idx) => (
+                                                <li key={idx} className="flex items-start">
+                                                    <span className={`mr-2 ${note.includes('CRITICAL') ? 'text-red-400' :
+                                                            note.includes('Urgent') ? 'text-orange-400' :
+                                                                'text-green-400'
+                                                        }`}>
+                                                        {note.includes('CRITICAL') ? '🔴' : note.includes('Urgent') ? '⚠️' : '✓'}
+                                                    </span>
+                                                    <span>{note}</span>
                                                 </li>
-                                            )}
-                                            {parseFloat(rul) < 30 && (
-                                                <li className="flex items-start">
-                                                    <span className="text-red-400 mr-2">🔴</span>
-                                                    <span>Critical: Plan sensor replacement immediately</span>
-                                                </li>
-                                            )}
-                                            {parseFloat(rul) >= 50 && (
-                                                <li className="flex items-start">
-                                                    <span className="text-green-400 mr-2">✓</span>
-                                                    <span>Sensor operating within normal parameters</span>
-                                                </li>
-                                            )}
+                                            )) || (
+                                                    <>
+                                                        {parseFloat(rul) < 50 && (
+                                                            <li className="flex items-start">
+                                                                <span className="text-orange-400 mr-2">⚠️</span>
+                                                                <span>Schedule calibration within 7 days</span>
+                                                            </li>
+                                                        )}
+                                                        {parseFloat(rul) >= 50 && (
+                                                            <li className="flex items-start">
+                                                                <span className="text-green-400 mr-2">✓</span>
+                                                                <span>Sensor operating within normal parameters</span>
+                                                            </li>
+                                                        )}
+                                                    </>
+                                                )}
                                             <li className="flex items-start">
                                                 <span className="text-blue-400 mr-2">📅</span>
-                                                <span>Next check: {Math.ceil((100 - degradation) * 2)} days</span>
+                                                <span>Next check: {healthReport?.maintenance_schedule?.next_check_days ?? Math.ceil((100 - degradation) * 2)} days</span>
                                             </li>
                                             <li className="flex items-start">
                                                 <span className="text-purple-400 mr-2">🔧</span>
-                                                <span>Regular calibration every {parseFloat(rul) > 70 ? '30' : '15'} days</span>
+                                                <span>Calibration interval: {healthReport?.maintenance_schedule?.calibration_interval_days ?? (parseFloat(rul) > 70 ? 30 : 15)} days</span>
                                             </li>
                                         </ul>
                                     </div>

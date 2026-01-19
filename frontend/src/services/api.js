@@ -122,6 +122,20 @@ export const api = {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         return { success: true };
+    },
+
+    // Health Report (unified RUL, status, risks, forecast)
+    healthReport: async (sensorData = null, degradationLevel = null) => {
+        const response = await fetch(`${API_BASE_URL}/api/health-report`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sensor_data: sensorData,
+                degradation_level: degradationLevel
+            })
+        });
+        if (!response.ok) throw new Error('Failed to get health report');
+        return response.json();
     }
 };
 
