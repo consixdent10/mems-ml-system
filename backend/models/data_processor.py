@@ -233,25 +233,28 @@ class DataProcessor:
             temp_coeff = self.specs.ACCEL_TEMP_COEFF
             resonant_freq = self.specs.ACCEL_RESONANT_FREQ * (1 - deg_factor * 0.05)
             
-            # White noise component
-            white_noise = np.random.normal(0, noise_density * np.sqrt(sampling_rate), num_samples)
+            # White noise component (for texture)
+            white_noise = np.random.normal(0, 1, num_samples)
             
-            # Combined noise (1/f + white) - tuned to scale with degradation
-            # Base noise ~0.02 at deg 0, reaches ~0.15 at deg 10
-            base_noise_level = 0.02
-            noise_scale = 0.013  # Per degradation level
-            noise_jitter = np.random.uniform(-0.005, 0.005)
-            noise_amplitude = base_noise_level + deg_factor * noise_scale * 10 + noise_jitter
-            combined_noise = (0.7 * flicker_noise + 0.3 * white_noise / noise_density) * noise_amplitude
+            # ===== EXPONENTIAL NOISE SCALING =====
+            # At 0% deg → noise ~0.01, at 50% → ~0.06, at 100% → ~0.15
+            base_noise = 0.01
+            max_noise = 0.15
+            # Exponential curve d^1.4 for gradual increase
+            noise_amplitude = base_noise + (max_noise - base_noise) * (deg_factor ** 1.4)
+            noise_jitter = np.random.uniform(-0.003, 0.003)
+            noise_amplitude = np.clip(noise_amplitude + noise_jitter, 0, max_noise)
+            combined_noise = (0.7 * flicker_noise + 0.3 * white_noise) * noise_amplitude
             
-            # Drift (cumulative sensor degradation)
-            # Base drift ~0.005 at deg 0-1, reaches ~0.06 at deg 10
-            base_drift = 0.005
-            drift_scale = 0.0055  # Per degradation level
-            drift_jitter = np.random.uniform(-0.002, 0.002)
-            drift_amplitude = base_drift + deg_factor * drift_scale * 10 + drift_jitter
-            drift = drift_amplitude * np.ones(num_samples) + \
-                   self.specs.ACCEL_ZERO_G_OFFSET * (1 + deg_factor * 0.5)
+            # ===== EXPONENTIAL DRIFT SCALING =====
+            # At 0% deg → drift ~0.002, at 50% → ~0.015, at 100% → ~0.06
+            base_drift = 0.002
+            max_drift = 0.06
+            # Exponential curve d^1.6 for gradual increase
+            drift_amplitude = base_drift + (max_drift - base_drift) * (deg_factor ** 1.6)
+            drift_jitter = np.random.uniform(-0.001, 0.001)
+            drift_amplitude = np.clip(drift_amplitude + drift_jitter, 0, max_drift)
+            drift = drift_amplitude * np.ones(num_samples)
             
         elif sensor_type == 'gyroscope':
             signal_base = 0 + 2 * np.sin(2 * np.pi * base_freq * time)
@@ -261,11 +264,19 @@ class DataProcessor:
             temp_coeff = self.specs.GYRO_TEMP_COEFF
             resonant_freq = self.specs.GYRO_RESONANT_FREQ * (1 - deg_factor * 0.03)
             
-            white_noise = np.random.normal(0, noise_density * np.sqrt(sampling_rate), num_samples)
-            combined_noise = 0.6 * flicker_noise * noise_density * 5 + 0.4 * white_noise
+            white_noise = np.random.normal(0, 1, num_samples)
             
-            drift = deg_factor * 0.002 * time + \
-                   self.specs.GYRO_ZERO_RATE_OFFSET * (1 + deg_factor)
+            # Exponential noise scaling
+            base_noise = 0.01
+            max_noise = 0.15
+            noise_amplitude = base_noise + (max_noise - base_noise) * (deg_factor ** 1.4)
+            combined_noise = (0.6 * flicker_noise + 0.4 * white_noise) * noise_amplitude
+            
+            # Exponential drift scaling
+            base_drift = 0.002
+            max_drift = 0.06
+            drift_amplitude = base_drift + (max_drift - base_drift) * (deg_factor ** 1.6)
+            drift = drift_amplitude * np.ones(num_samples)
             
         elif sensor_type == 'pressure':
             signal_base = 101.325 + 0.2 * np.sin(2 * np.pi * base_freq * time)
@@ -273,25 +284,43 @@ class DataProcessor:
             sensitivity = self.specs.PRESSURE_SENSITIVITY
             noise_density = self.specs.PRESSURE_NOISE * (1 + deg_factor * 1.5)
             temp_coeff = self.specs.PRESSURE_TEMP_COEFF
-            resonant_freq = 2000  # Lower for pressure sensors
+            resonant_freq = 2000
             
-            white_noise = np.random.normal(0, noise_density, num_samples)
-            combined_noise = 0.5 * flicker_noise * noise_density + 0.5 * white_noise
+            white_noise = np.random.normal(0, 1, num_samples)
             
-            drift = deg_factor * 0.0005 * time
+            # Exponential noise scaling
+            base_noise = 0.01
+            max_noise = 0.15
+            noise_amplitude = base_noise + (max_noise - base_noise) * (deg_factor ** 1.4)
+            combined_noise = (0.5 * flicker_noise + 0.5 * white_noise) * noise_amplitude
+            
+            # Exponential drift scaling
+            base_drift = 0.002
+            max_drift = 0.06
+            drift_amplitude = base_drift + (max_drift - base_drift) * (deg_factor ** 1.6)
+            drift = drift_amplitude * np.ones(num_samples)
             
         else:  # temperature sensor
             signal_base = 25 + 5 * np.sin(2 * np.pi * base_freq * time)
             
             sensitivity = 1.0 / self.specs.TEMP_RESOLUTION
             noise_density = self.specs.TEMP_ACCURACY * 0.1 * (1 + deg_factor)
-            temp_coeff = 0.001  # Self-heating effect
-            resonant_freq = 100  # Thermal time constant
+            temp_coeff = 0.001
+            resonant_freq = 100
             
-            white_noise = np.random.normal(0, noise_density, num_samples)
-            combined_noise = 0.4 * flicker_noise * noise_density + 0.6 * white_noise
+            white_noise = np.random.normal(0, 1, num_samples)
             
-            drift = deg_factor * 0.003 * time
+            # Exponential noise scaling
+            base_noise = 0.01
+            max_noise = 0.15
+            noise_amplitude = base_noise + (max_noise - base_noise) * (deg_factor ** 1.4)
+            combined_noise = (0.4 * flicker_noise + 0.6 * white_noise) * noise_amplitude
+            
+            # Exponential drift scaling
+            base_drift = 0.002
+            max_drift = 0.06
+            drift_amplitude = base_drift + (max_drift - base_drift) * (deg_factor ** 1.6)
+            drift = drift_amplitude * np.ones(num_samples)
         
         # Temperature compensation effect
         temp_effect = self._temperature_compensation(temperature, temp_coeff)
