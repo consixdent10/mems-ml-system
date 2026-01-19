@@ -1,8 +1,12 @@
 // API Configuration - Use environment variable for production, localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-if (!import.meta.env.VITE_API_URL && location.hostname !== "localhost") {
-    console.warn("VITE_API_URL is missing in production. API will fail.");
+// Dev-only logging and production warning
+if (import.meta.env.DEV) {
+    console.log('[API] Base URL:', API_BASE_URL);
+}
+if (!import.meta.env.VITE_API_URL && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    console.warn('[API] VITE_API_URL is missing in production. API calls will fail.');
 }
 
 

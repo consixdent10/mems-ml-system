@@ -25,9 +25,9 @@ class XAIAnalyzer:
         noise_power = np.var(X[:, 3]) + 0.0001  # Avoid division by zero
         snr = float(10 * np.log10(signal_power / noise_power))
         
-        # Calculate RUL percentage (simulated based on drift and noise)
-        # Lower drift/noise = higher RUL
-        rul_percent = float(max(0, min(100, 100 - (mean_drift * 500) - (mean_noise * 200))))
+        # Calculate RUL percentage using unified utility
+        from utils.rul_utils import compute_rul_from_sensor_data
+        rul_percent = compute_rul_from_sensor_data(mean_drift, mean_noise, mean_temp)
         
         # Status reason details - raw values used in decision
         status_reason_details = {

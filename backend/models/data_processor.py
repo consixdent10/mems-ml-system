@@ -529,20 +529,25 @@ class DataProcessor:
         return anomalies
     
     def calculate_rul(self, data: pd.DataFrame, degradation_level: int = None) -> float:
-        """Calculate Remaining Useful Life based on sensor characteristics"""
+        """Calculate Remaining Useful Life using unified rul_utils."""
+        from utils.rul_utils import compute_rul_from_degradation_level, compute_rul_from_sensor_data
+        
         if degradation_level is not None:
-            # Direct calculation from degradation level
-            rul = max(0, 100 - degradation_level * 10)
+            # Use unified function for degradation-based RUL
+            rul = compute_rul_from_degradation_level(degradation_level)
         else:
-            # Estimate from sensor characteristics
-            characteristics = self.extract_sensor_characteristics(data)
-            
-            # Multi-factor RUL estimation
-            noise_factor = max(0, 100 - characteristics['noise']['rms'] * 100)
-            linearity_factor = characteristics['linearity']['percent']
-            sensitivity_factor = max(0, 100 - characteristics['sensitivity']['deviation_percent'])
-            
-            # Weighted average
-            rul = 0.4 * noise_factor + 0.3 * linearity_factor + 0.3 * sensitivity_factor
+            # Estimate from sensor data
+            if 'drift' in data.columns and 'noise' in data.columns:
+                mean_drift = float(np.mean(data['drift'].values))
+                mean_noise = float(np.mean(data['noise'].values))
+                mean_temp = float(np.mean(data['temperature'].values)) if 'temperature' in data.columns else 25.0
+                rul = compute_rul_from_sensor_data(mean_drift, mean_noise, mean_temp)
+            else:
+                # Fallback to characteristics-based estimation
+                characteristics = self.extract_sensor_characteristics(data)
+                noise_factor = max(0, 100 - characteristics['noise']['rms'] * 100)
+                linearity_factor = characteristics['linearity']['percent']
+                sensitivity_factor = max(0, 100 - characteristics['sensitivity']['deviation_percent'])
+                rul = 0.4 * noise_factor + 0.3 * linearity_factor + 0.3 * sensitivity_factor
         
         return float(max(0, min(100, rul)))
