@@ -1343,7 +1343,7 @@ const MEMSDashboard = () => {
                                 <input
                                     type="range"
                                     min="0"
-                                    max="10"
+                                    max="100"
                                     value={degradation}
                                     onChange={(e) => setDegradation(parseInt(e.target.value))}
                                     disabled={isUsingUploadedData}
