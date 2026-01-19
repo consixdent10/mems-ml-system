@@ -29,29 +29,14 @@ class XAIAnalyzer:
         from utils.rul_utils import compute_rul_from_sensor_data
         rul_percent = compute_rul_from_sensor_data(mean_drift, mean_noise, mean_temp)
         
-        # Status reason details - raw values used in decision
-        status_reason_details = {
-            "snr": round(snr, 2),
-            "drift": round(mean_drift, 4),
-            "noise": round(mean_noise, 4),
-            "temperature": round(mean_temp, 2),
-            "rul_percent": round(rul_percent, 1)
-        }
+        # Use unified status determination
+        from utils.status_utils import get_status_from_features
+        status_result = get_status_from_features(snr, mean_drift, mean_noise, rul_percent, mean_temp)
         
-        # Rule-based status determination (CRITICAL first → WARNING → HEALTHY)
-        # Thresholds tuned for realistic synthetic data scaling
-        if snr < 10 or mean_drift > 0.05 or mean_noise > 0.12 or rul_percent < 30:
-            prediction = 'CRITICAL'
-            triggered_rule = "Rule 3: Critical"
-            rule_reason = "SNR < 10 OR Drift > 0.05 OR Noise > 0.12 OR RUL < 30%"
-        elif (snr > 10 and snr <= 20) or (mean_drift >= 0.02 and mean_drift <= 0.05) or (mean_noise >= 0.08 and mean_noise <= 0.12):
-            prediction = 'WARNING'
-            triggered_rule = "Rule 2: Warning"
-            rule_reason = "(10 < SNR ≤ 20) OR (0.02 ≤ Drift ≤ 0.05) OR (0.08 ≤ Noise ≤ 0.12)"
-        else:
-            prediction = 'HEALTHY'
-            triggered_rule = "Rule 1: Healthy"
-            rule_reason = "SNR > 20 AND Drift < 0.02 AND Noise < 0.08"
+        prediction = status_result['status']
+        triggered_rule = status_result['triggered_rule']
+        rule_reason = status_result['rule_reason']
+        status_reason_details = status_result['status_reason_details']
         
         # Feature importance
         feature_names = ['Value', 'Temperature', 'Drift', 'Noise']

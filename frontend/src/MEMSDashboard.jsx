@@ -422,6 +422,15 @@ const MEMSDashboard = () => {
     const [trainError, setTrainError] = useState('');
     const [generalizationMetrics, setGeneralizationMetrics] = useState(null);
 
+    // Toast notification state
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    // Toast helper function
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+    };
+
     useEffect(() => {
         generateData();
     }, [sensorType, degradation]);
@@ -563,7 +572,9 @@ const MEMSDashboard = () => {
 
         } catch (error) {
             console.error('Error generating data:', error);
-            setApiError('Failed to generate data. Make sure the backend server is running on http://localhost:8000');
+            const errorMsg = error.message || 'Failed to generate data';
+            setApiError(errorMsg);
+            showToast(errorMsg, 'error');
         } finally {
             setIsLoadingData(false);
         }
@@ -605,10 +616,14 @@ const MEMSDashboard = () => {
             setPredictionExplanation(xaiResponse.prediction_explanation);
             setModelConfidence(xaiResponse.confidence);
 
+            showToast('Models trained successfully!', 'success');
+
         } catch (error) {
             console.error('Error training models:', error);
-            setTrainError(error.message || 'Train Models failed');
-            setApiError('Failed to train models. Make sure the backend server is running.');
+            const errorMsg = error.message || 'Train Models failed';
+            setTrainError(errorMsg);
+            setApiError(errorMsg);
+            showToast(errorMsg, 'error');
         } finally {
             setIsTraining(false);
         }
@@ -1234,6 +1249,20 @@ const MEMSDashboard = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-6">
+            {/* Toast Notification */}
+            {toast.show && (
+                <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-pulse ${toast.type === 'success' ? 'bg-green-600' :
+                    toast.type === 'warning' ? 'bg-orange-600' :
+                        toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+                    }`}>
+                    <span className="text-xl">
+                        {toast.type === 'success' ? '✅' : toast.type === 'warning' ? '⚠️' : toast.type === 'error' ? '❌' : 'ℹ️'}
+                    </span>
+                    <span className="font-medium">{toast.message}</span>
+                    <button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-white/80 hover:text-white">✕</button>
+                </div>
+            )}
+
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
