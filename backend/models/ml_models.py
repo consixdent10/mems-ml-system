@@ -212,14 +212,75 @@ class MLModelTrainer:
             'predicted': best_pred[indices].tolist()
         }
         
+        # ===== GENERALIZATION TEST =====
+        # Test model on different degradation distribution
+        # Train: degradation ≤50% (high RUL), Test: degradation >50% (low RUL)
+        generalization_metrics = None
+        try:
+            # RUL > 50 means degradation < 50%
+            train_mask = y >= 50  # Healthy data (RUL >= 50%)
+            test_mask = y < 50    # Degraded data (RUL < 50%)
+            
+            if np.sum(train_mask) > 20 and np.sum(test_mask) > 10:
+                X_gen_train = X[train_mask]
+                y_gen_train = y[train_mask]
+                X_gen_test = X[test_mask]
+                y_gen_test = y[test_mask]
+                
+                # Scale and predict with best model
+                X_gen_train_scaled = self.scaler.fit_transform(X_gen_train)
+                X_gen_test_scaled = self.scaler.transform(X_gen_test)
+                
+                best_model = self.models[self.best_model_name]
+                best_model.fit(X_gen_train_scaled, y_gen_train)  # Retrain on subset
+                gen_pred = best_model.predict(X_gen_test_scaled)
+                
+                gen_metrics = self._compute_regression_metrics(y_gen_test, gen_pred)
+                generalization_metrics = {
+                    'mae': gen_metrics['mae'],
+                    'rmse': gen_metrics['rmse'],
+                    'r2Score': gen_metrics['r2Score'],
+                    'trainSize': int(np.sum(train_mask)),
+                    'testSize': int(np.sum(test_mask)),
+                    'description': 'Train on RUL≥50%, Test on RUL<50%'
+                }
+                print(f"Generalization Test - R²: {gen_metrics['r2Score']:.4f}, RMSE: {gen_metrics['rmse']:.4f}")
+                
+                # Retrain best model on full data for best performance
+                best_model.fit(X_train_scaled, y_train)
+        except Exception as e:
+            print(f"Generalization test failed: {e}")
+        
+        # ===== AUTO-SAVE BEST MODEL =====
+        best_model_saved = False
+        best_model_path = None
+        try:
+            best_model = self.models[self.best_model_name]
+            best_model_path = os.path.join(SAVED_MODELS_DIR, 'best_model.joblib')
+            scaler_path = os.path.join(SAVED_MODELS_DIR, 'scaler.joblib')
+            
+            joblib.dump(best_model, best_model_path)
+            joblib.dump(self.scaler, scaler_path)
+            best_model_saved = True
+            print(f"Auto-saved best model to {best_model_path}")
+        except Exception as e:
+            print(f"Failed to auto-save best model: {e}")
+        
         self.trained = True
         print("All models trained successfully!")
         
-        return {
+        result = {
             'models': results,
             'bestModel': self.best_model_name,
-            'predictionsSample': self.predictions_sample
+            'predictionsSample': self.predictions_sample,
+            'bestModelSaved': best_model_saved,
+            'bestModelPath': best_model_path if best_model_saved else None
         }
+        
+        if generalization_metrics:
+            result['generalizationMetrics'] = generalization_metrics
+        
+        return result
     
     def _compute_regression_metrics(self, y_true, y_pred):
         """Compute regression metrics only (no classification metrics)"""

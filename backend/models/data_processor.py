@@ -236,25 +236,37 @@ class DataProcessor:
             # White noise component (for texture)
             white_noise = np.random.normal(0, 1, num_samples)
             
-            # ===== EXPONENTIAL NOISE SCALING =====
-            # At 0% deg → noise ~0.01, at 50% → ~0.06, at 100% → ~0.15
+            # ===== NONLINEAR NOISE SCALING =====
+            # Noise grows slowly initially, then faster after 50% degradation
+            # Uses exponential curve: base * (1 + exp(deg/30)/exp(100/30))
             base_noise = 0.01
             max_noise = 0.15
-            # Exponential curve d^1.4 for gradual increase
-            noise_amplitude = base_noise + (max_noise - base_noise) * (deg_factor ** 1.4)
-            noise_jitter = np.random.uniform(-0.003, 0.003)
-            noise_amplitude = np.clip(noise_amplitude + noise_jitter, 0, max_noise)
-            combined_noise = (0.7 * flicker_noise + 0.3 * white_noise) * noise_amplitude
+            exp_factor = np.exp(degradation_level / 30) / np.exp(100 / 30)
+            noise_amplitude = base_noise + (max_noise - base_noise) * exp_factor
             
-            # ===== EXPONENTIAL DRIFT SCALING =====
-            # At 0% deg → drift ~0.002, at 50% → ~0.015, at 100% → ~0.06
+            # Per-sample gaussian jitter for unpredictability
+            sample_jitter = np.random.normal(0, noise_amplitude * 0.15, num_samples)
+            
+            # Occasional spike anomalies (1% chance per sample)
+            spike_mask = np.random.random(num_samples) < 0.01
+            spike_values = np.random.uniform(2, 4, num_samples) * noise_amplitude
+            sample_jitter[spike_mask] += spike_values[spike_mask]
+            
+            combined_noise = (0.7 * flicker_noise + 0.3 * white_noise) * noise_amplitude + sample_jitter
+            combined_noise = np.clip(combined_noise, -max_noise * 2, max_noise * 2)
+            
+            # ===== NONLINEAR DRIFT SCALING =====
+            # Drift grows slowly initially, then accelerates after 60% degradation
+            # Uses power curve: base * (1 + (deg/100)^1.8)
             base_drift = 0.002
             max_drift = 0.06
-            # Exponential curve d^1.6 for gradual increase
-            drift_amplitude = base_drift + (max_drift - base_drift) * (deg_factor ** 1.6)
-            drift_jitter = np.random.uniform(-0.001, 0.001)
-            drift_amplitude = np.clip(drift_amplitude + drift_jitter, 0, max_drift)
-            drift = drift_amplitude * np.ones(num_samples)
+            power_factor = (degradation_level / 100) ** 1.8
+            drift_amplitude = base_drift + (max_drift - base_drift) * power_factor
+            
+            # Per-sample drift variation
+            drift_variation = np.random.normal(0, drift_amplitude * 0.1, num_samples)
+            drift = drift_amplitude * np.ones(num_samples) + drift_variation
+            drift = np.clip(drift, 0, max_drift * 1.2)
             
         elif sensor_type == 'gyroscope':
             signal_base = 0 + 2 * np.sin(2 * np.pi * base_freq * time)

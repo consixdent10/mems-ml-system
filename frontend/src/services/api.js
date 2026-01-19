@@ -101,6 +101,27 @@ export const api = {
         });
         if (!response.ok) throw new Error('Failed to get LSTM prediction');
         return response.json();
+    },
+
+    // Download Best Model
+    downloadBestModel: async () => {
+        const response = await fetch(`${API_BASE_URL}/api/download-best-model`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('No model found. Train models first.');
+            }
+            throw new Error('Failed to download model');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'best_model.joblib';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        return { success: true };
     }
 };
 

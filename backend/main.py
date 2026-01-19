@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -185,6 +186,29 @@ async def health_check():
         "service": "MEMS ML API"
     }
 
+
+@app.get("/api/download-best-model", tags=["ML Models"])
+async def download_best_model():
+    """
+    Download the auto-saved best model (joblib format).
+    
+    Returns the best_model.joblib file if available.
+    Models are auto-saved after training.
+    """
+    saved_models_dir = os.path.join(os.path.dirname(__file__), 'saved_models')
+    best_model_path = os.path.join(saved_models_dir, 'best_model.joblib')
+    
+    if not os.path.exists(best_model_path):
+        raise HTTPException(
+            status_code=404, 
+            detail="No best model found. Train models first."
+        )
+    
+    return FileResponse(
+        path=best_model_path,
+        filename="best_model.joblib",
+        media_type="application/octet-stream"
+    )
 
 @app.post("/api/generate-data", tags=["Data Generation"])
 async def generate_sensor_data(request: GenerateDataRequest):

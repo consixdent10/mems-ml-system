@@ -16,20 +16,32 @@ const ModelsTab = ({
     isTraining,
     trainModels,
     getFeatureImportance,
-    trainError
+    trainError,
+    generalizationMetrics,
+    onDownloadModel
 }) => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col">
                 <div className="flex justify-between items-center">
                     <h3 className="text-xl font-semibold">ML Model Training & Comparison</h3>
-                    <button
-                        onClick={trainModels}
-                        disabled={isTraining}
-                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
-                    >
-                        {isTraining ? 'Training...' : 'Train All Models'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={trainModels}
+                            disabled={isTraining}
+                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-6 py-2 rounded-lg font-medium transition"
+                        >
+                            {isTraining ? 'Training...' : 'Train All Models'}
+                        </button>
+                        {bestModel && onDownloadModel && (
+                            <button
+                                onClick={onDownloadModel}
+                                className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2"
+                            >
+                                ⬇️ Download Best Model
+                            </button>
+                        )}
+                    </div>
                 </div>
                 {trainError && (
                     <div className="mt-3 p-3 rounded bg-red-900/40 border border-red-500 text-red-200 text-sm">
@@ -77,6 +89,33 @@ const ModelsTab = ({
                             </p>
                         )}
                     </div>
+
+                    {/* Generalization Test Card */}
+                    {generalizationMetrics && (
+                        <div className="bg-slate-700 rounded-lg p-4 mb-6 border-l-4 border-yellow-500">
+                            <h4 className="text-lg font-semibold mb-3 text-yellow-400">🧪 Generalization Test</h4>
+                            <p className="text-xs text-gray-400 mb-3">{generalizationMetrics.description}</p>
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                                <div className="text-center">
+                                    <p className="text-gray-400">R² Score</p>
+                                    <p className={`text-2xl font-bold ${generalizationMetrics.r2Score >= 0.7 ? 'text-green-400' : generalizationMetrics.r2Score >= 0.5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                        {generalizationMetrics.r2Score?.toFixed(4)}
+                                    </p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-gray-400">RMSE</p>
+                                    <p className="text-2xl font-bold text-orange-400">{generalizationMetrics.rmse?.toFixed(2)}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-gray-400">MAE</p>
+                                    <p className="text-2xl font-bold text-yellow-400">{generalizationMetrics.mae?.toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                                Train: {generalizationMetrics.trainSize} samples | Test: {generalizationMetrics.testSize} samples
+                            </p>
+                        </div>
+                    )}
 
                     {/* Model Cards - Regression Metrics Only */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

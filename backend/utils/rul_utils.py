@@ -44,6 +44,11 @@ def compute_degradation_score(drift: float, noise: float, temperature: float = 2
     # Weighted combination
     degradation_score = 0.45 * drift_score + 0.45 * noise_score + 0.10 * temp_score
     
+    # Add small random noise to prevent perfect ML prediction
+    # This makes the RUL target slightly unpredictable for realism
+    random_noise = np.random.normal(0, 3)  # ±3% noise
+    degradation_score += random_noise
+    
     return clamp(degradation_score, 0, 100)
 
 

@@ -420,6 +420,7 @@ const MEMSDashboard = () => {
     const [isLoadingUpload, setIsLoadingUpload] = useState(false);
     const [apiError, setApiError] = useState('');
     const [trainError, setTrainError] = useState('');
+    const [generalizationMetrics, setGeneralizationMetrics] = useState(null);
 
     useEffect(() => {
         generateData();
@@ -591,6 +592,7 @@ const MEMSDashboard = () => {
             setModelResults(modelsData.models || []);
             setBestModel(modelsData.bestModel || null);
             setPredictionsSample(modelsData.predictionsSample || null);
+            setGeneralizationMetrics(modelsData.generalizationMetrics || null);
 
             // Get XAI analysis from backend
             console.log('Calling XAI API...');
@@ -609,6 +611,16 @@ const MEMSDashboard = () => {
             setApiError('Failed to train models. Make sure the backend server is running.');
         } finally {
             setIsTraining(false);
+        }
+    };
+
+    const downloadBestModel = async () => {
+        try {
+            await api.downloadBestModel();
+            alert('✅ Best model downloaded successfully!');
+        } catch (error) {
+            console.error('Error downloading model:', error);
+            alert('❌ ' + error.message);
         }
     };
 
@@ -2003,6 +2015,8 @@ const MEMSDashboard = () => {
                             trainModels={trainModels}
                             getFeatureImportance={getFeatureImportance}
                             trainError={trainError}
+                            generalizationMetrics={generalizationMetrics}
+                            onDownloadModel={downloadBestModel}
                         />
                     )}
 
