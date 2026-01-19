@@ -2379,34 +2379,52 @@ const MEMSDashboard = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="bg-slate-700 rounded-lg p-4">
                                         <h4 className="font-semibold mb-3 text-blue-400">Predicted Failure Modes</h4>
+                                        <p className="text-xs text-gray-500 mb-3">Risk Level: 0-30% Low (green) | 30-70% Medium (orange) | 70-100% High (red)</p>
                                         <div className="space-y-3">
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm">Calibration Drift</span>
-                                                    <span className="text-sm font-semibold">{(degradation * 8).toFixed(1)}%</span>
-                                                </div>
-                                                <div className="w-full bg-slate-600 rounded-full h-2">
-                                                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${degradation * 8}%` }}></div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm">Noise Increase</span>
-                                                    <span className="text-sm font-semibold">{(degradation * 6).toFixed(1)}%</span>
-                                                </div>
-                                                <div className="w-full bg-slate-600 rounded-full h-2">
-                                                    <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${degradation * 6}%` }}></div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm">Temperature Sensitivity</span>
-                                                    <span className="text-sm font-semibold">{(degradation * 5).toFixed(1)}%</span>
-                                                </div>
-                                                <div className="w-full bg-slate-600 rounded-full h-2">
-                                                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${degradation * 5}%` }}></div>
-                                                </div>
-                                            </div>
+                                            {(() => {
+                                                // Calculate clamped risk scores
+                                                const driftRisk = Math.min(100, Math.max(0, degradation * 1.2 + 5));
+                                                const noiseRisk = Math.min(100, Math.max(0, degradation * 1.0 + 3));
+                                                const tempRisk = Math.min(100, Math.max(0, degradation * 0.8 + 2));
+
+                                                const getRiskColor = (value) => {
+                                                    if (value >= 70) return { bar: 'bg-red-500', text: 'text-red-400' };
+                                                    if (value >= 30) return { bar: 'bg-orange-500', text: 'text-orange-400' };
+                                                    return { bar: 'bg-green-500', text: 'text-green-400' };
+                                                };
+
+                                                return (
+                                                    <>
+                                                        <div>
+                                                            <div className="flex justify-between mb-1">
+                                                                <span className="text-sm">Calibration Drift</span>
+                                                                <span className={`text-sm font-semibold ${getRiskColor(driftRisk).text}`}>{driftRisk.toFixed(1)}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-slate-600 rounded-full h-2">
+                                                                <div className={`${getRiskColor(driftRisk).bar} h-2 rounded-full`} style={{ width: `${driftRisk}%` }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex justify-between mb-1">
+                                                                <span className="text-sm">Noise Increase</span>
+                                                                <span className={`text-sm font-semibold ${getRiskColor(noiseRisk).text}`}>{noiseRisk.toFixed(1)}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-slate-600 rounded-full h-2">
+                                                                <div className={`${getRiskColor(noiseRisk).bar} h-2 rounded-full`} style={{ width: `${noiseRisk}%` }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex justify-between mb-1">
+                                                                <span className="text-sm">Temperature Sensitivity</span>
+                                                                <span className={`text-sm font-semibold ${getRiskColor(tempRisk).text}`}>{tempRisk.toFixed(1)}%</span>
+                                                            </div>
+                                                            <div className="w-full bg-slate-600 rounded-full h-2">
+                                                                <div className={`${getRiskColor(tempRisk).bar} h-2 rounded-full`} style={{ width: `${tempRisk}%` }}></div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
 
@@ -2444,22 +2462,36 @@ const MEMSDashboard = () => {
                                 </div>
 
                                 <div>
-                                    <h4 className="text-lg font-semibold mb-4">Degradation Forecast (Next 100 Days)</h4>
+                                    <h4 className="text-lg font-semibold mb-4">RUL Forecast (Next 100 Days)</h4>
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <AreaChart data={Array.from({ length: 20 }, (_, i) => ({
-                                            day: i * 5,
-                                            rul: Math.max(0, 100 - degradation * 10 - i * 3),
-                                            upper: Math.max(0, 100 - degradation * 10 - i * 2.5),
-                                            lower: Math.max(0, 100 - degradation * 10 - i * 3.5)
-                                        }))}>
+                                        <AreaChart data={(() => {
+                                            // Start from actual RUL and decay based on degradation
+                                            const startRul = parseFloat(rul) || (100 - degradation);
+                                            const dailyDecline = 0.2 + (degradation / 100) * 0.8; // 0.2%-1% per day
+
+                                            return Array.from({ length: 21 }, (_, i) => {
+                                                const day = i * 5;
+                                                // Exponential decay: RUL * exp(-decline * day / 100)
+                                                const decayFactor = Math.exp(-dailyDecline * day / 100);
+                                                const expectedRul = Math.max(0, Math.min(100, startRul * decayFactor));
+                                                const uncertainty = 3 + (day / 100) * 5;
+
+                                                return {
+                                                    day,
+                                                    expected: Math.round(expectedRul * 10) / 10,
+                                                    upper: Math.round(Math.min(100, expectedRul + uncertainty) * 10) / 10,
+                                                    lower: Math.round(Math.max(0, expectedRul - uncertainty) * 10) / 10
+                                                };
+                                            });
+                                        })()}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                             <XAxis dataKey="day" stroke="#9CA3AF" label={{ value: 'Days', position: 'insideBottom', offset: -5 }} />
-                                            <YAxis stroke="#9CA3AF" label={{ value: 'RUL (%)', angle: -90, position: 'insideLeft' }} />
+                                            <YAxis stroke="#9CA3AF" domain={[0, 100]} label={{ value: 'RUL (%)', angle: -90, position: 'insideLeft' }} />
                                             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
                                             <Legend />
-                                            <Area type="monotone" dataKey="upper" stackId="1" stroke="#10B981" fill="#10B981" fillOpacity={0.3} name="Upper Bound" />
-                                            <Area type="monotone" dataKey="rul" stackId="2" stroke="#EF4444" fill="#EF4444" fillOpacity={0.8} strokeWidth={3} name="Expected RUL" />
-                                            <Area type="monotone" dataKey="lower" stackId="3" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} name="Lower Bound" />
+                                            <Area type="monotone" dataKey="upper" stroke="#10B981" fill="#10B981" fillOpacity={0.2} name="Upper Bound" />
+                                            <Area type="monotone" dataKey="expected" stroke="#EF4444" fill="#EF4444" fillOpacity={0.5} strokeWidth={3} name="Expected RUL" />
+                                            <Area type="monotone" dataKey="lower" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.2} name="Lower Bound" />
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>

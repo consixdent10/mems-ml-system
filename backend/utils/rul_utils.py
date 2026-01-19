@@ -124,3 +124,135 @@ def get_health_status(rul_percent: float) -> str:
         return 'WARNING'
     else:
         return 'CRITICAL'
+
+
+def forecast_rul_curve(rul_start: float, drift: float, noise: float, 
+                       degradation_level: int, horizon: int = 100) -> dict:
+    """
+    Generate RUL forecast curve over given horizon (days).
+    
+    The curve starts at rul_start and decreases over time based on
+    degradation level. Higher degradation = faster decline.
+    
+    Args:
+        rul_start: Current RUL percentage (0-100)
+        drift: Current drift value
+        noise: Current noise value
+        degradation_level: Current degradation level (0-100)
+        horizon: Forecast horizon in days (default 100)
+    
+    Returns:
+        Dictionary with days, expected, upper, lower arrays
+    """
+    days = list(range(horizon))
+    
+    # Degradation rate: higher degradation = faster decline
+    # At 0% deg: decline ~0.2% per day
+    # At 50% deg: decline ~0.5% per day
+    # At 100% deg: decline ~1.0% per day
+    daily_decline = 0.2 + (degradation_level / 100) * 0.8
+    
+    # Add contribution from drift/noise
+    drift_factor = (drift / 0.06) * 0.3 if drift > 0 else 0
+    noise_factor = (noise / 0.15) * 0.2 if noise > 0 else 0
+    daily_decline += drift_factor + noise_factor
+    
+    expected = []
+    upper = []
+    lower = []
+    
+    for day in days:
+        # Exponential decay for realism
+        decay_factor = np.exp(-daily_decline * day / 100)
+        predicted_rul = rul_start * decay_factor
+        
+        # Add slight randomness
+        jitter = np.random.uniform(-0.5, 0.5)
+        predicted_rul = clamp(predicted_rul + jitter, 0, 100)
+        
+        # Confidence bounds (±5-10%)
+        uncertainty = 3 + (day / horizon) * 5  # Grows with time
+        upper_bound = clamp(predicted_rul + uncertainty, 0, 100)
+        lower_bound = clamp(predicted_rul - uncertainty, 0, 100)
+        
+        expected.append(round(predicted_rul, 2))
+        upper.append(round(upper_bound, 2))
+        lower.append(round(lower_bound, 2))
+    
+    return {
+        'days': days,
+        'expected': expected,
+        'upper': upper,
+        'lower': lower
+    }
+
+
+def compute_risk_scores(drift: float, noise: float, temperature: float = 25.0) -> dict:
+    """
+    Compute failure mode risk scores (0-100 for each).
+    
+    Args:
+        drift: Mean drift value
+        noise: Mean noise value
+        temperature: Mean temperature
+    
+    Returns:
+        Dictionary with calibration_drift, noise_increase, temperature_sensitivity
+        Each value is clamped to 0-100.
+    """
+    # Critical thresholds (values at which risk = 100%)
+    DRIFT_CRITICAL = 0.06
+    NOISE_CRITICAL = 0.15
+    TEMP_SPAN = 30  # ±15°C from optimal
+    
+    # Calibration drift risk
+    drift_risk = (abs(drift) / DRIFT_CRITICAL) * 100
+    drift_risk = clamp(drift_risk, 0, 100)
+    
+    # Noise increase risk
+    noise_risk = (noise / NOISE_CRITICAL) * 100
+    noise_risk = clamp(noise_risk, 0, 100)
+    
+    # Temperature sensitivity risk
+    temp_deviation = abs(temperature - 25.0)
+    temp_risk = (temp_deviation / TEMP_SPAN) * 100
+    temp_risk = clamp(temp_risk, 0, 100)
+    
+    return {
+        'calibration_drift': round(drift_risk, 1),
+        'noise_increase': round(noise_risk, 1),
+        'temperature_sensitivity': round(temp_risk, 1)
+    }
+
+
+def get_maintenance_schedule(rul_percent: float) -> dict:
+    """
+    Get maintenance recommendations based on RUL.
+    
+    Returns:
+        Dictionary with next_check_days, recommended_interval_days, notes
+    """
+    if rul_percent >= 70:
+        return {
+            'next_check_days': 30,
+            'recommended_interval_days': 90,
+            'notes': ['Routine maintenance schedule', 'Continue normal monitoring']
+        }
+    elif rul_percent >= 50:
+        return {
+            'next_check_days': 14,
+            'recommended_interval_days': 60,
+            'notes': ['Increase monitoring frequency', 'Schedule calibration check']
+        }
+    elif rul_percent >= 30:
+        return {
+            'next_check_days': 7,
+            'recommended_interval_days': 30,
+            'notes': ['Urgent: Plan sensor replacement', 'Daily monitoring recommended']
+        }
+    else:
+        return {
+            'next_check_days': 1,
+            'recommended_interval_days': 7,
+            'notes': ['CRITICAL: Immediate replacement required', 'Backup systems recommended']
+        }
