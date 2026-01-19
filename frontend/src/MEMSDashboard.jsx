@@ -368,6 +368,7 @@ const MEMSDashboard = () => {
     const [sensorCharacteristics, setSensorCharacteristics] = useState(null);
     const [fftData, setFftData] = useState([]);
     const [waveletData, setWaveletData] = useState([]);
+    const [dominantFrequency, setDominantFrequency] = useState('0.00');
     const [alerts, setAlerts] = useState([]);
     const [historicalData, setHistoricalData] = useState([]);
     const [comparisonMode, setComparisonMode] = useState(false);
@@ -542,6 +543,7 @@ const MEMSDashboard = () => {
             // Process FFT and Wavelet (keep local for performance)
             const fft = performFFT(response.data);
             setFftData(fft.frequencies);
+            setDominantFrequency(fft.dominantFrequency || '0.00');
 
             const wavelet = waveletTransform(response.data);
             setWaveletData(wavelet);
@@ -2494,8 +2496,8 @@ const MEMSDashboard = () => {
                                             {healthReport?.maintenance_schedule?.notes?.map((note, idx) => (
                                                 <li key={idx} className="flex items-start">
                                                     <span className={`mr-2 ${note.includes('CRITICAL') ? 'text-red-400' :
-                                                            note.includes('Urgent') ? 'text-orange-400' :
-                                                                'text-green-400'
+                                                        note.includes('Urgent') ? 'text-orange-400' :
+                                                            'text-green-400'
                                                         }`}>
                                                         {note.includes('CRITICAL') ? '🔴' : note.includes('Urgent') ? '⚠️' : '✓'}
                                                     </span>
