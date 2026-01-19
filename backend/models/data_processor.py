@@ -236,11 +236,21 @@ class DataProcessor:
             # White noise component
             white_noise = np.random.normal(0, noise_density * np.sqrt(sampling_rate), num_samples)
             
-            # Combined noise (1/f + white)
-            combined_noise = 0.7 * flicker_noise * noise_density * 10 + 0.3 * white_noise
+            # Combined noise (1/f + white) - tuned to scale with degradation
+            # Base noise ~0.02 at deg 0, reaches ~0.15 at deg 10
+            base_noise_level = 0.02
+            noise_scale = 0.013  # Per degradation level
+            noise_jitter = np.random.uniform(-0.005, 0.005)
+            noise_amplitude = base_noise_level + deg_factor * noise_scale * 10 + noise_jitter
+            combined_noise = (0.7 * flicker_noise + 0.3 * white_noise / noise_density) * noise_amplitude
             
             # Drift (cumulative sensor degradation)
-            drift = deg_factor * 0.001 * time + \
+            # Base drift ~0.005 at deg 0-1, reaches ~0.06 at deg 10
+            base_drift = 0.005
+            drift_scale = 0.0055  # Per degradation level
+            drift_jitter = np.random.uniform(-0.002, 0.002)
+            drift_amplitude = base_drift + deg_factor * drift_scale * 10 + drift_jitter
+            drift = drift_amplitude * np.ones(num_samples) + \
                    self.specs.ACCEL_ZERO_G_OFFSET * (1 + deg_factor * 0.5)
             
         elif sensor_type == 'gyroscope':

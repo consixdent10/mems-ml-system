@@ -39,18 +39,19 @@ class XAIAnalyzer:
         }
         
         # Rule-based status determination (CRITICAL first → WARNING → HEALTHY)
-        if snr < 10 or mean_drift > 0.05 or rul_percent < 30:
+        # Thresholds tuned for realistic synthetic data scaling
+        if snr < 10 or mean_drift > 0.05 or mean_noise > 0.12 or rul_percent < 30:
             prediction = 'CRITICAL'
             triggered_rule = "Rule 3: Critical"
-            rule_reason = "SNR < 10 OR Drift > 0.05 OR RUL < 30%"
-        elif (snr > 10 and snr < 20) or mean_drift > 0.01 or mean_noise > 0.05:
+            rule_reason = "SNR < 10 OR Drift > 0.05 OR Noise > 0.12 OR RUL < 30%"
+        elif (snr > 10 and snr <= 20) or (mean_drift >= 0.02 and mean_drift <= 0.05) or (mean_noise >= 0.08 and mean_noise <= 0.12):
             prediction = 'WARNING'
             triggered_rule = "Rule 2: Warning"
-            rule_reason = "10 < SNR < 20 OR Drift > 0.01 OR Noise > 0.05"
+            rule_reason = "(10 < SNR ≤ 20) OR (0.02 ≤ Drift ≤ 0.05) OR (0.08 ≤ Noise ≤ 0.12)"
         else:
             prediction = 'HEALTHY'
             triggered_rule = "Rule 1: Healthy"
-            rule_reason = "SNR > 20 AND Drift < 0.01 AND Noise < 0.05"
+            rule_reason = "SNR > 20 AND Drift < 0.02 AND Noise < 0.08"
         
         # Feature importance
         feature_names = ['Value', 'Temperature', 'Drift', 'Noise']
