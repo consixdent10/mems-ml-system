@@ -369,6 +369,9 @@ const MEMSDashboard = () => {
     const [fftData, setFftData] = useState([]);
     const [waveletData, setWaveletData] = useState([]);
     const [dominantFrequency, setDominantFrequency] = useState('0.00');
+    const [peakMagnitude, setPeakMagnitude] = useState('0.00');
+    const [noiseFloor, setNoiseFloor] = useState('0.00');
+    const [waveletEnergy, setWaveletEnergy] = useState({ approx: '0', detail: '0', ratio: '0', interpretation: '' });
     const [alerts, setAlerts] = useState([]);
     const [historicalData, setHistoricalData] = useState([]);
     const [comparisonMode, setComparisonMode] = useState(false);
@@ -540,13 +543,21 @@ const MEMSDashboard = () => {
             setAnomalies(response.anomalies);
             setSensorCharacteristics(response.sensor_characteristics || null);
 
-            // Process FFT and Wavelet (keep local for performance)
+            // Process FFT and Wavelet with comprehensive metrics
             const fft = performFFT(response.data);
             setFftData(fft.frequencies);
             setDominantFrequency(fft.dominantFrequency || '0.00');
+            setPeakMagnitude(fft.peakMagnitude || '0.00');
+            setNoiseFloor(fft.noiseFloor || '0.00');
 
             const wavelet = waveletTransform(response.data);
-            setWaveletData(wavelet);
+            setWaveletData(wavelet.coefficients || wavelet);
+            setWaveletEnergy({
+                approx: wavelet.approxEnergy || '0',
+                detail: wavelet.detailEnergy || '0',
+                ratio: wavelet.energyRatio || '0',
+                interpretation: wavelet.interpretation || ''
+            });
 
             // Generate alerts
             const newAlerts = [];
@@ -2736,18 +2747,34 @@ const MEMSDashboard = () => {
 
                                 <div className="bg-slate-700 rounded-lg p-4">
                                     <h4 className="font-semibold mb-3 text-blue-400">Advanced Analytics Summary</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                                         <div>
                                             <p className="text-sm text-gray-400">Dominant Frequency</p>
-                                            <p className="text-xl font-bold">{fftData[0]?.freq || 0} Hz</p>
+                                            <p className="text-xl font-bold text-cyan-400">{dominantFrequency} Hz</p>
                                         </div>
                                         <div>
-                                            <p className="text-sm text-gray-400">Wavelet Energy</p>
-                                            <p className="text-xl font-bold">{(Math.random() * 100).toFixed(2)}</p>
+                                            <p className="text-sm text-gray-400">Peak Magnitude</p>
+                                            <p className="text-xl font-bold">{peakMagnitude}</p>
                                         </div>
                                         <div>
-                                            <p className="text-sm text-gray-400">Signal Complexity</p>
-                                            <p className="text-xl font-bold">{(Math.random() * 10).toFixed(2)}</p>
+                                            <p className="text-sm text-gray-400">Noise Floor</p>
+                                            <p className="text-xl font-bold text-gray-300">{parseFloat(noiseFloor).toExponential(2)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-400">Wavelet Energy Ratio</p>
+                                            <p className="text-xl font-bold text-orange-400">{waveletEnergy.ratio}%</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-slate-800 rounded p-3">
+                                            <p className="text-xs text-gray-500 mb-1">FFT Processing</p>
+                                            <p className="text-sm text-green-400">✓ DC removed + Hann window applied</p>
+                                            <p className="text-xs text-gray-400 mt-1">Prevents false 0 Hz spike</p>
+                                        </div>
+                                        <div className="bg-slate-800 rounded p-3">
+                                            <p className="text-xs text-gray-500 mb-1">Wavelet Analysis</p>
+                                            <p className="text-sm text-blue-400">{waveletEnergy.interpretation || 'Processing...'}</p>
+                                            <p className="text-xs text-gray-400 mt-1">Approx: {waveletEnergy.approx} | Detail: {waveletEnergy.detail}</p>
                                         </div>
                                     </div>
                                 </div>

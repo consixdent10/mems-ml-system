@@ -1,6 +1,7 @@
 /**
  * Signal Processing Utilities
  * FFT and Wavelet Transform implementations with proper DC removal and windowing
+ * Viva-ready with comprehensive metrics
  */
 
 /**
@@ -19,15 +20,19 @@ const hannWindow = (i, N) => {
  * 
  * @param {Array} data - Array of sensor data points with 'value' and optional 'time' property
  * @param {number} sampleRate - Optional sample rate in Hz (default: inferred or 100 Hz)
- * @returns {Object} - frequencies array, magnitudes, dominantFrequency, sampleRate
+ * @returns {Object} - Complete FFT analysis with metrics
  */
 export const performFFT = (data, sampleRate = null) => {
     if (!data || data.length < 4) {
         return {
             frequencies: [],
             magnitudes: [],
-            dominantFrequency: 0,
-            sampleRate: 100
+            dominantFrequency: '0.00',
+            peakMagnitude: 0,
+            noiseFloor: 0,
+            sampleRate: 100,
+            nyquistFrequency: 50,
+            bandwidth: 0
         };
     }
 
@@ -47,7 +52,7 @@ export const performFFT = (data, sampleRate = null) => {
         fs = 100;
     }
 
-    // 1) Remove DC offset (mean subtraction)
+    // 1) Remove DC offset (mean subtraction) - PREVENTS FALSE 0 Hz SPIKE
     const mean = values.reduce((sum, v) => sum + v, 0) / N;
     const dcRemoved = values.map(v => v - mean);
 
@@ -67,10 +72,10 @@ export const performFFT = (data, sampleRate = null) => {
             imag -= windowed[n] * Math.sin(angle);
         }
 
-        // Magnitude (single-sided, multiply by 2 except DC/Nyquist)
+        // Magnitude with proper scaling: (2/N) for single-sided spectrum
         let magnitude = Math.sqrt(real * real + imag * imag) / N;
         if (k > 0 && k < halfN - 1) {
-            magnitude *= 2;
+            magnitude *= 2;  // Single-sided spectrum scaling
         }
 
         // Correct frequency axis: freq = k * fs / N
@@ -79,7 +84,8 @@ export const performFFT = (data, sampleRate = null) => {
         frequencies.push({
             freq: freq.toFixed(2),
             magnitude: magnitude.toFixed(6),
-            freqHz: freq
+            freqHz: freq,
+            magnitudeRaw: magnitude
         });
         magnitudes.push(magnitude);
     }
@@ -94,43 +100,120 @@ export const performFFT = (data, sampleRate = null) => {
         }
     }
     const dominantFrequency = (maxIdx * fs) / N;
+    const peakMagnitude = maxMag;
 
-    // 5) Normalize magnitudes for chart display
-    const maxMagnitude = Math.max(...magnitudes.slice(1)) || 1;  // Ignore DC
+    // 5) Calculate noise floor (median of upper 30% frequency magnitudes)
+    const upperBins = magnitudes.slice(Math.floor(magnitudes.length * 0.7));
+    const sortedUpper = [...upperBins].sort((a, b) => a - b);
+    const noiseFloor = sortedUpper[Math.floor(sortedUpper.length / 2)] || 0;
+
+    // 6) Calculate 3dB bandwidth (frequencies where magnitude > peakMag/sqrt(2))
+    const threshold = peakMagnitude / Math.sqrt(2);
+    let bandwidthLow = dominantFrequency;
+    let bandwidthHigh = dominantFrequency;
+    for (let k = maxIdx; k >= 1; k--) {
+        if (magnitudes[k] >= threshold) {
+            bandwidthLow = (k * fs) / N;
+        } else break;
+    }
+    for (let k = maxIdx; k < magnitudes.length; k++) {
+        if (magnitudes[k] >= threshold) {
+            bandwidthHigh = (k * fs) / N;
+        } else break;
+    }
+    const bandwidth = bandwidthHigh - bandwidthLow;
+
+    // 7) Normalize magnitudes for chart display
+    const maxMagnitude = Math.max(...magnitudes.slice(1)) || 1;
     const normalizedFreqs = frequencies.map((f, i) => ({
         ...f,
-        magnitudeNorm: (magnitudes[i] / maxMagnitude).toFixed(4)
+        magnitudeNorm: (magnitudes[i] / maxMagnitude).toFixed(4),
+        magnitudeLog: Math.log10(magnitudes[i] + 1e-8).toFixed(4)
     }));
 
-    // Return only meaningful frequencies (limit to 50 bins for performance)
+    // Return comprehensive FFT analysis
     return {
         frequencies: normalizedFreqs.slice(0, Math.min(50, halfN)),
         magnitudes: magnitudes.slice(0, Math.min(50, halfN)),
         dominantFrequency: dominantFrequency.toFixed(2),
+        peakMagnitude: peakMagnitude.toFixed(4),
+        noiseFloor: noiseFloor.toFixed(6),
+        bandwidth: bandwidth.toFixed(2),
         sampleRate: fs,
-        nyquistFrequency: fs / 2
+        nyquistFrequency: fs / 2,
+        dcRemoved: true,
+        windowApplied: 'Hann'
     };
 };
 
 /**
- * Perform Haar Wavelet Transform on sensor data
+ * Perform Haar Wavelet Transform on sensor data with energy metrics
  * @param {Array} data - Array of sensor data points with 'value' property
- * @returns {Array} - Wavelet coefficients with approximation and detail
+ * @returns {Object} - Wavelet coefficients and energy analysis
  */
 export const waveletTransform = (data) => {
     if (!data || data.length < 2) {
-        return [];
+        return {
+            coefficients: [],
+            approxEnergy: 0,
+            detailEnergy: 0,
+            energyRatio: 0,
+            interpretation: 'Insufficient data'
+        };
     }
 
     // Simplified Haar wavelet transform
     const values = data.map(d => parseFloat(d.value) || 0);
     const coefficients = [];
 
-    for (let i = 0; i < values.length - 1; i += 2) {
-        const avg = (values[i] + values[i + 1]) / 2;
-        const diff = (values[i] - values[i + 1]) / 2;
-        coefficients.push({ index: i / 2, approximation: avg.toFixed(4), detail: diff.toFixed(4) });
+    // Normalize input for stable visualization
+    const valMin = Math.min(...values);
+    const valMax = Math.max(...values);
+    const valRange = valMax - valMin || 1;
+    const normalized = values.map(v => (v - valMin) / valRange * 10);
+
+    let approxEnergy = 0;
+    let detailEnergy = 0;
+
+    for (let i = 0; i < normalized.length - 1; i += 2) {
+        const a = normalized[i];
+        const b = normalized[i + 1];
+        const avg = (a + b) / 2;
+        const diff = (a - b) / 2;
+
+        coefficients.push({
+            index: i / 2,
+            approximation: avg.toFixed(4),
+            detail: diff.toFixed(4),
+            approxRaw: avg,
+            detailRaw: diff
+        });
+
+        approxEnergy += avg * avg;
+        detailEnergy += diff * diff;
     }
 
-    return coefficients.slice(0, 50);
+    const totalEnergy = approxEnergy + detailEnergy || 1;
+    const energyRatio = detailEnergy / totalEnergy;
+
+    // Interpretation based on energy ratio
+    let interpretation = '';
+    if (energyRatio < 0.1) {
+        interpretation = 'Low-frequency components dominate (smooth signal)';
+    } else if (energyRatio < 0.3) {
+        interpretation = 'Balanced frequency content (normal operation)';
+    } else if (energyRatio < 0.5) {
+        interpretation = 'Elevated high-frequency content (increased noise)';
+    } else {
+        interpretation = 'High-frequency noise dominates (possible degradation)';
+    }
+
+    return {
+        coefficients: coefficients.slice(0, 50),
+        approxEnergy: approxEnergy.toFixed(2),
+        detailEnergy: detailEnergy.toFixed(2),
+        totalEnergy: totalEnergy.toFixed(2),
+        energyRatio: (energyRatio * 100).toFixed(1),
+        interpretation
+    };
 };
