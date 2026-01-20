@@ -429,6 +429,10 @@ const MEMSDashboard = () => {
     // Toast notification state
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+    // Anomaly Detection Configuration
+    const [anomalyThreshold, setAnomalyThreshold] = useState(2.5);
+    const [anomalyWindowSize, setAnomalyWindowSize] = useState(50);
+
     // Toast helper function
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -2583,33 +2587,86 @@ const MEMSDashboard = () => {
                     {
                         activeTab === 'anomaly' && (
                             <div className="space-y-6">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-xl font-semibold">Anomaly Detection Analysis</h3>
+                                <div className="flex justify-between items-center flex-wrap gap-4">
+                                    <h3 className="text-xl font-semibold">🔍 Rolling Z-Score Anomaly Detection</h3>
                                     <div className="bg-slate-700 px-4 py-2 rounded-lg">
                                         <span className="text-gray-400">Total Anomalies: </span>
-                                        <span className="font-bold text-red-400">{anomalies.filter(a => a.isAnomaly).length}</span>
-                                        <span className="text-gray-400"> / {anomalies.length}</span>
+                                        <span className="font-bold text-red-400">{detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).length}</span>
+                                        <span className="text-gray-400"> / {sensorData.length}</span>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Configuration Sliders */}
+                                <div className="bg-slate-700 rounded-lg p-4">
+                                    <h4 className="font-semibold mb-4 text-blue-400">Detection Parameters</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-2">
+                                                Z-Score Threshold: <span className="text-white font-bold">{anomalyThreshold.toFixed(1)}</span>
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="2.0"
+                                                max="4.0"
+                                                step="0.1"
+                                                value={anomalyThreshold}
+                                                onChange={(e) => setAnomalyThreshold(parseFloat(e.target.value))}
+                                                className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>2.0 (Sensitive)</span>
+                                                <span>4.0 (Conservative)</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-2">
+                                                Rolling Window Size: <span className="text-white font-bold">{anomalyWindowSize}</span> samples
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="20"
+                                                max="200"
+                                                step="10"
+                                                value={anomalyWindowSize}
+                                                onChange={(e) => setAnomalyWindowSize(parseInt(e.target.value))}
+                                                className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                                            />
+                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                                <span>20 (Local)</span>
+                                                <span>200 (Global)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Stats Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div className="bg-slate-700 rounded-lg p-4">
                                         <h4 className="text-sm text-gray-400 mb-2">Anomaly Rate</h4>
                                         <p className="text-3xl font-bold text-red-400">
-                                            {(anomalies.filter(a => a.isAnomaly).length / anomalies.length * 100).toFixed(2)}%
+                                            {((detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).length / Math.max(sensorData.length, 1)) * 100).toFixed(2)}%
                                         </p>
                                     </div>
                                     <div className="bg-slate-700 rounded-lg p-4">
                                         <h4 className="text-sm text-gray-400 mb-2">Detection Method</h4>
-                                        <p className="text-lg font-semibold text-blue-400">Isolation Forest</p>
-                                        <p className="text-sm text-gray-500">Z-Score Threshold: 2.5</p>
+                                        <p className="text-lg font-semibold text-blue-400">Rolling Z-Score</p>
+                                        <p className="text-sm text-gray-500">Window: {anomalyWindowSize}</p>
                                     </div>
                                     <div className="bg-slate-700 rounded-lg p-4">
-                                        <h4 className="text-sm text-gray-400 mb-2">Confidence</h4>
-                                        <p className="text-3xl font-bold text-green-400">94.5%</p>
+                                        <h4 className="text-sm text-gray-400 mb-2">Max Z-Score</h4>
+                                        <p className="text-3xl font-bold text-orange-400">
+                                            {Math.max(...detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).map(a => parseFloat(a.score) || 0)).toFixed(2)}
+                                        </p>
+                                    </div>
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="text-sm text-gray-400 mb-2">Avg Z-Score</h4>
+                                        <p className="text-3xl font-bold text-green-400">
+                                            {(detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).reduce((sum, a) => sum + (parseFloat(a.score) || 0), 0) / Math.max(sensorData.length, 1)).toFixed(2)}
+                                        </p>
                                     </div>
                                 </div>
 
+                                {/* Scatter Chart with Anomalies */}
                                 <div>
                                     <h4 className="text-lg font-semibold mb-4">Anomaly Detection Over Time</h4>
                                     <ResponsiveContainer width="100%" height={300}>
@@ -2619,35 +2676,45 @@ const MEMSDashboard = () => {
                                             <YAxis dataKey="value" stroke="#9CA3AF" label={{ value: `Value (${getSensorUnit()})`, angle: -90, position: 'insideLeft' }} />
                                             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
                                             <Legend />
-                                            <Scatter data={anomalies.filter(a => !a.isAnomaly).slice(0, 200)} fill="#10B981" name="Normal" />
-                                            <Scatter data={anomalies.filter(a => a.isAnomaly)} fill="#EF4444" name="Anomaly" shape="star" />
+                                            <Scatter data={detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => !a.isAnomaly).slice(0, 200)} fill="#10B981" name="Normal" />
+                                            <Scatter data={detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly)} fill="#EF4444" name="Anomaly" shape="star" />
                                         </ScatterChart>
                                     </ResponsiveContainer>
                                 </div>
 
+                                {/* Z-Score Distribution with Threshold Line */}
                                 <div>
-                                    <h4 className="text-lg font-semibold mb-4">Anomaly Score Distribution</h4>
+                                    <h4 className="text-lg font-semibold mb-4">Z-Score Distribution (Threshold: {anomalyThreshold})</h4>
                                     <ResponsiveContainer width="100%" height={250}>
-                                        <BarChart data={anomalies.slice(0, 100).map((a, i) => ({ ...a, index: i }))}>
+                                        <BarChart data={detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).slice(0, 100).map((a, i) => ({ ...a, index: i }))}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                             <XAxis dataKey="index" stroke="#9CA3AF" />
                                             <YAxis stroke="#9CA3AF" />
                                             <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                            <Bar dataKey="score" fill="#8B5CF6" />
+                                            <ReferenceLine y={anomalyThreshold} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={2} label={{ value: 'Threshold', fill: '#EF4444', position: 'right' }} />
+                                            <Bar dataKey="score" name="Z-Score">
+                                                {detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).slice(0, 100).map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={parseFloat(entry.score) > anomalyThreshold ? '#EF4444' : '#8B5CF6'} />
+                                                ))}
+                                            </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
 
+                                {/* Recent Anomalies List */}
                                 <div className="bg-slate-700 rounded-lg p-4">
                                     <h4 className="font-semibold mb-3 text-blue-400">Recent Anomalies</h4>
                                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                                        {anomalies.filter(a => a.isAnomaly).slice(-10).reverse().map((anomaly, idx) => (
+                                        {detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).slice(-10).reverse().map((anomaly, idx) => (
                                             <div key={idx} className="flex justify-between items-center bg-slate-600 p-2 rounded">
                                                 <span className="text-sm">Time: {anomaly.time}s</span>
-                                                <span className="text-sm">Value: {anomaly.value}</span>
-                                                <span className="text-sm font-semibold text-red-400">Score: {anomaly.score}</span>
+                                                <span className="text-sm">Value: {parseFloat(anomaly.value).toFixed(4)}</span>
+                                                <span className="text-sm font-semibold text-red-400">Z-Score: {anomaly.score}</span>
                                             </div>
                                         ))}
+                                        {detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).length === 0 && (
+                                            <p className="text-gray-400 text-center py-4">No anomalies detected with current parameters</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
