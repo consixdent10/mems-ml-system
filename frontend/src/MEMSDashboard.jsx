@@ -2765,17 +2765,10 @@ const MEMSDashboard = () => {
                                             <p className="text-xl font-bold text-orange-400">{waveletEnergy.ratio}%</p>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="bg-slate-800 rounded p-3">
-                                            <p className="text-xs text-gray-500 mb-1">FFT Processing</p>
-                                            <p className="text-sm text-green-400">✓ DC removed + Hann window applied</p>
-                                            <p className="text-xs text-gray-400 mt-1">Prevents false 0 Hz spike</p>
-                                        </div>
-                                        <div className="bg-slate-800 rounded p-3">
-                                            <p className="text-xs text-gray-500 mb-1">Wavelet Analysis</p>
-                                            <p className="text-sm text-blue-400">{waveletEnergy.interpretation || 'Processing...'}</p>
-                                            <p className="text-xs text-gray-400 mt-1">Approx: {waveletEnergy.approx} | Detail: {waveletEnergy.detail}</p>
-                                        </div>
+                                    <div className="bg-slate-800 rounded p-3 mt-4">
+                                        <p className="text-xs text-gray-500 mb-1">Wavelet Analysis</p>
+                                        <p className="text-sm text-blue-400">{waveletEnergy.interpretation || 'Processing...'}</p>
+                                        <p className="text-xs text-gray-400 mt-1">Approx: {waveletEnergy.approx} | Detail: {waveletEnergy.detail}</p>
                                     </div>
                                 </div>
                             </div>
