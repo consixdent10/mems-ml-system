@@ -240,6 +240,106 @@ async def get_health_report(request: HealthReportRequest):
         print(f"Health report error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+class FFTRequest(BaseModel):
+    sensor_data: List[dict]
+    sample_rate: Optional[float] = None
+
+
+@app.post("/api/signal/fft", tags=["Signal Processing"])
+async def compute_fft(request: FFTRequest):
+    """
+    Compute Fast Fourier Transform using numpy.fft (O(N log N)).
+    
+    Returns frequency spectrum with DC removal and Hann window applied.
+    """
+    try:
+        data = request.sensor_data
+        if not data or len(data) < 4:
+            return {
+                "success": True,
+                "frequencies": [],
+                "magnitudes": [],
+                "dominant_frequency": 0,
+                "peak_magnitude": 0,
+                "noise_floor": 0,
+                "sample_rate": 100
+            }
+        
+        # Extract values and compute sample rate
+        values = np.array([float(d.get('value', 0)) for d in data])
+        N = len(values)
+        
+        # Infer sample rate from time column if available
+        fs = request.sample_rate
+        if fs is None and 'time' in data[0] and len(data) > 1:
+            dt = float(data[1].get('time', 0)) - float(data[0].get('time', 0))
+            fs = 1 / dt if dt > 0 else 100
+        if fs is None or fs <= 0:
+            fs = 100  # Default 100 Hz
+        
+        # 1) Remove DC offset
+        values_dc_removed = values - np.mean(values)
+        
+        # 2) Apply Hann window
+        window = np.hanning(N)
+        values_windowed = values_dc_removed * window
+        
+        # 3) Compute FFT using numpy (O(N log N))
+        fft_result = np.fft.rfft(values_windowed)
+        magnitudes = np.abs(fft_result) / N
+        magnitudes[1:-1] *= 2  # Single-sided spectrum scaling
+        
+        # 4) Frequency axis
+        freqs = np.fft.rfftfreq(N, d=1/fs)
+        
+        # 5) Find dominant frequency (ignore DC bin)
+        if len(magnitudes) > 1:
+            peak_idx = np.argmax(magnitudes[1:]) + 1
+            dominant_frequency = float(freqs[peak_idx])
+            peak_magnitude = float(magnitudes[peak_idx])
+        else:
+            dominant_frequency = 0
+            peak_magnitude = 0
+        
+        # 6) Calculate noise floor (median of upper 30% frequencies)
+        upper_idx = int(len(magnitudes) * 0.7)
+        noise_floor = float(np.median(magnitudes[upper_idx:])) if upper_idx < len(magnitudes) else 0
+        
+        # 7) Prepare response (limit to 50 frequency bins for frontend)
+        max_bins = min(50, len(freqs))
+        max_mag = float(np.max(magnitudes[1:max_bins])) if max_bins > 1 else 1
+        
+        frequencies = []
+        mags_list = []
+        for i in range(max_bins):
+            frequencies.append({
+                "freq": round(float(freqs[i]), 2),
+                "magnitude": round(float(magnitudes[i]), 6),
+                "freqHz": float(freqs[i]),
+                "magnitudeRaw": float(magnitudes[i]),
+                "magnitudeNorm": round(float(magnitudes[i] / max_mag), 4) if max_mag > 0 else 0,
+                "magnitudeLog": round(float(np.log10(magnitudes[i] + 1e-8)), 4)
+            })
+            mags_list.append(float(magnitudes[i]))
+        
+        return {
+            "success": True,
+            "frequencies": frequencies,
+            "magnitudes": mags_list,
+            "dominant_frequency": round(dominant_frequency, 2),
+            "peak_magnitude": round(peak_magnitude, 4),
+            "noise_floor": round(noise_floor, 6),
+            "sample_rate": fs,
+            "nyquist_frequency": fs / 2,
+            "dc_removed": True,
+            "window_applied": "Hann"
+        }
+    except Exception as e:
+        print(f"FFT computation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/generate-data", tags=["Data Generation"])
 async def generate_sensor_data(request: GenerateDataRequest):
     """

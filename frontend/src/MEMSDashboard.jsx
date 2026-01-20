@@ -547,12 +547,23 @@ const MEMSDashboard = () => {
             setAnomalies(response.anomalies);
             setSensorCharacteristics(response.sensor_characteristics || null);
 
-            // Process FFT and Wavelet with comprehensive metrics
-            const fft = performFFT(response.data);
-            setFftData(fft.frequencies);
-            setDominantFrequency(fft.dominantFrequency || '0.00');
-            setPeakMagnitude(fft.peakMagnitude || '0.00');
-            setNoiseFloor(fft.noiseFloor || '0.00');
+            // Process FFT using backend numpy (O(N log N) vs local O(N²))
+            try {
+                const fftResult = await api.computeFFT(response.data);
+                if (fftResult.success) {
+                    setFftData(fftResult.frequencies);
+                    setDominantFrequency(String(fftResult.dominant_frequency) || '0.00');
+                    setPeakMagnitude(String(fftResult.peak_magnitude) || '0.00');
+                    setNoiseFloor(String(fftResult.noise_floor) || '0.00');
+                }
+            } catch (fftError) {
+                console.warn('Backend FFT failed, using local fallback:', fftError);
+                const fft = performFFT(response.data);
+                setFftData(fft.frequencies);
+                setDominantFrequency(fft.dominantFrequency || '0.00');
+                setPeakMagnitude(fft.peakMagnitude || '0.00');
+                setNoiseFloor(fft.noiseFloor || '0.00');
+            }
 
             const wavelet = waveletTransform(response.data);
             setWaveletData(wavelet.coefficients || wavelet);

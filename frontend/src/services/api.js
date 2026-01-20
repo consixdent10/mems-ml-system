@@ -136,6 +136,20 @@ export const api = {
         });
         if (!response.ok) throw new Error('Failed to get health report');
         return response.json();
+    },
+
+    // FFT Analysis (using numpy.fft on backend for O(N log N) performance)
+    computeFFT: async (sensorData, sampleRate = null) => {
+        const response = await fetch(`${API_BASE_URL}/api/signal/fft`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sensor_data: sensorData,
+                sample_rate: sampleRate
+            })
+        });
+        if (!response.ok) throw new Error('Failed to compute FFT');
+        return response.json();
     }
 };
 
