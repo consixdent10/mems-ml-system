@@ -1621,7 +1621,7 @@ const MEMSDashboard = () => {
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-4 overflow-x-auto">
-                    {['data', 'live', 'analysis', 'models', 'xai', 'prediction', 'anomaly', 'advanced', 'deeplearning'].map(tab => (
+                    {['data', 'live', 'analysis', 'models', 'xai', 'prediction', 'anomaly', 'advanced', 'deeplearning', 'architecture'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -2884,6 +2884,132 @@ const MEMSDashboard = () => {
                                         Unlike traditional ML models, LSTMs can learn temporal patterns in sensor readings over time,
                                         making them ideal for predictive maintenance.
                                     </p>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    {/* Architecture Tab */}
+                    {
+                        activeTab === 'architecture' && (
+                            <div className="space-y-6">
+                                <div className="text-center mb-6">
+                                    <h3 className="text-2xl font-bold text-blue-400 mb-2">🏗️ System Architecture</h3>
+                                    <p className="text-gray-400">End-to-End ML Pipeline for MEMS Sensor Health Monitoring</p>
+                                </div>
+
+                                {/* Pipeline Flow */}
+                                <div className="flex flex-wrap justify-center items-center gap-2">
+                                    {/* Step 1: Sensor Data */}
+                                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">📊</div>
+                                        <h4 className="font-bold text-sm">Sensor Data</h4>
+                                        <p className="text-xs text-blue-200 mt-1">Raw MEMS readings (accelerometer, gyroscope, etc.)</p>
+                                    </div>
+                                    <div className="text-gray-500 text-2xl">→</div>
+
+                                    {/* Step 2: Preprocessing */}
+                                    <div className="bg-gradient-to-br from-cyan-600 to-cyan-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">🔧</div>
+                                        <h4 className="font-bold text-sm">Preprocessing</h4>
+                                        <p className="text-xs text-cyan-200 mt-1">Noise filtering, normalization, outlier removal</p>
+                                    </div>
+                                    <div className="text-gray-500 text-2xl">→</div>
+
+                                    {/* Step 3: Feature Extraction */}
+                                    <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">⚙️</div>
+                                        <h4 className="font-bold text-sm">Feature Extraction</h4>
+                                        <p className="text-xs text-teal-200 mt-1">SNR, drift, mean, std, temperature effects</p>
+                                    </div>
+                                    <div className="text-gray-500 text-2xl">→</div>
+
+                                    {/* Step 4: ML/DL Models */}
+                                    <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">🧠</div>
+                                        <h4 className="font-bold text-sm">ML/DL Models</h4>
+                                        <p className="text-xs text-purple-200 mt-1">RF, XGBoost, SVR, LSTM neural networks</p>
+                                    </div>
+                                </div>
+
+                                {/* Second Row */}
+                                <div className="flex flex-wrap justify-center items-center gap-2">
+                                    {/* Step 5: RUL Prediction */}
+                                    <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">📈</div>
+                                        <h4 className="font-bold text-sm">RUL Prediction</h4>
+                                        <p className="text-xs text-orange-200 mt-1">Remaining Useful Life estimation (0-100%)</p>
+                                    </div>
+                                    <div className="text-gray-500 text-2xl">→</div>
+
+                                    {/* Step 6: XAI */}
+                                    <div className="bg-gradient-to-br from-pink-600 to-pink-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">🔍</div>
+                                        <h4 className="font-bold text-sm">XAI Analysis</h4>
+                                        <p className="text-xs text-pink-200 mt-1">SHAP values, feature importance explainability</p>
+                                    </div>
+                                    <div className="text-gray-500 text-2xl">→</div>
+
+                                    {/* Step 7: Dashboard/Alerts */}
+                                    <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">🖥️</div>
+                                        <h4 className="font-bold text-sm">Dashboard</h4>
+                                        <p className="text-xs text-green-200 mt-1">Real-time monitoring, alerts, visualizations</p>
+                                    </div>
+                                    <div className="text-gray-500 text-2xl">→</div>
+
+                                    {/* Step 8: Report Export */}
+                                    <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg p-4 w-40 text-center shadow-lg">
+                                        <div className="text-2xl mb-2">📄</div>
+                                        <h4 className="font-bold text-sm">Report Export</h4>
+                                        <p className="text-xs text-red-200 mt-1">PDF reports, email notifications, model download</p>
+                                    </div>
+                                </div>
+
+                                {/* Technology Stack */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold text-yellow-400 mb-2">🐍 Backend</h4>
+                                        <ul className="text-sm text-gray-300 space-y-1">
+                                            <li>• FastAPI (Python 3.10+)</li>
+                                            <li>• Scikit-learn, XGBoost</li>
+                                            <li>• TensorFlow/Keras (LSTM)</li>
+                                            <li>• SHAP for explainability</li>
+                                        </ul>
+                                    </div>
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold text-cyan-400 mb-2">⚛️ Frontend</h4>
+                                        <ul className="text-sm text-gray-300 space-y-1">
+                                            <li>• React 18 + Vite</li>
+                                            <li>• Tailwind CSS</li>
+                                            <li>• Recharts visualization</li>
+                                            <li>• html2canvas + jsPDF</li>
+                                        </ul>
+                                    </div>
+                                    <div className="bg-slate-700 rounded-lg p-4">
+                                        <h4 className="font-semibold text-green-400 mb-2">☁️ Deployment</h4>
+                                        <ul className="text-sm text-gray-300 space-y-1">
+                                            <li>• Vercel (Frontend)</li>
+                                            <li>• Render (Backend API)</li>
+                                            <li>• GitHub CI/CD</li>
+                                            <li>• Colab GPU (LSTM training)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Data Flow Info */}
+                                <div className="bg-slate-700 rounded-lg p-4">
+                                    <h4 className="font-semibold text-blue-400 mb-3">📡 Data Flow Summary</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+                                        <div>
+                                            <p className="font-medium text-white mb-1">Input:</p>
+                                            <p>Synthetic or real MEMS sensor data (accelerometer, gyroscope, pressure, temperature)</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-white mb-1">Output:</p>
+                                            <p>RUL prediction, health status, failure risks, maintenance schedule, exportable reports</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )
