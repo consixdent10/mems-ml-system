@@ -1,13 +1,24 @@
-# 🔬 MEMS Sensor ML Analysis & Prediction System
+# 🔬 MEMS Sensor ML Analysis & Predictive Maintenance System
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-cyan.svg)](https://tailwindcss.com)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)](https://tensorflow.org)
 
-Advanced Machine Learning-Based Performance Analysis and Predictive Maintenance System for MEMS Sensors.
+A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remaining Useful Life (RUL) prediction**, and **explainable AI analysis**.
 
 ![Dashboard Preview](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+
+---
+
+## 🌐 Live Demo
+
+| Service | URL |
+|---------|-----|
+| **Frontend Dashboard** | [mems-ml-system.vercel.app](https://mems-ml-system.vercel.app) |
+| **Backend API** | [mems-ml-system.onrender.com](https://mems-ml-system.onrender.com) |
+| **API Documentation** | [/docs](https://mems-ml-system.onrender.com/docs) |
 
 ---
 
@@ -15,22 +26,38 @@ Advanced Machine Learning-Based Performance Analysis and Predictive Maintenance 
 
 ### Core Capabilities
 - **Multi-Sensor Support**: Accelerometer, Gyroscope, Pressure, Temperature sensors
-- **Real-time Data Visualization**: Interactive charts with Recharts
-- **ML Model Training**: Random Forest, Gradient Boosting, SVM, Neural Network
-- **Explainable AI (XAI)**: SHAP values and feature importance analysis
-- **Anomaly Detection**: Z-score based isolation forest approach
-- **Predictive Maintenance**: RUL (Remaining Useful Life) prediction
+- **Real-time Visualization**: Interactive charts with Recharts
+- **ML Model Training**: Random Forest, XGBoost, SVR, Gradient Boosting
+- **LSTM Deep Learning**: Pre-trained neural network for time-series RUL prediction
+- **Explainable AI (XAI)**: SHAP values, feature importance, decision rules
+- **Rolling Z-Score Anomaly Detection**: Configurable threshold (2.0-4.0) and window size (20-200)
+- **RUL Prediction**: Remaining Useful Life estimation with confidence intervals
 
-### Advanced Features
-- **Deep Learning (LSTM)**: Neural network for time-series RUL prediction
-- **Signal Processing**: FFT and Wavelet Transform analysis
-- **Model Persistence**: Save/load trained models using joblib
-- **PDF Report Generation**: Professional reports with jspdf
+### Advanced Processing
+- **Fast Fourier Transform (FFT)**: Backend numpy.fft for O(N log N) performance
+- **Wavelet Transform**: Energy ratio analysis with interpretation
+- **Unified Health Report API**: Single source of truth for RUL, status, risks, forecast
+
+### Dashboard Tabs
+| Tab | Description |
+|-----|-------------|
+| 📊 **Data** | Sensor data visualization and export |
+| 📡 **Live** | Real-time streaming simulation |
+| 📈 **Analysis** | Statistical analysis and trends |
+| 🤖 **Models** | ML model training and comparison |
+| 🔍 **XAI** | SHAP feature importance and explanations |
+| 🎯 **Prediction** | RUL forecast with confidence bounds |
+| ⚠️ **Anomaly** | Rolling Z-score detection with sliders |
+| 🌊 **Advanced** | FFT and Wavelet signal processing |
+| 🧠 **Deep Learning** | LSTM neural network training |
+| 🏗️ **Architecture** | System pipeline visualization |
+
+### Production Features
+- **PDF Report Generation**: Professional reports with charts
 - **Email Alerts**: Gmail SMTP integration for maintenance notifications
-- **Live Monitoring**: Real-time sensor data simulation
+- **Model Download**: Export trained models as .joblib files
 - **Database Storage**: SQLite with SQLAlchemy ORM
-- **API Documentation**: Swagger UI at `/docs`
-- **Docker Ready**: Full containerization with Docker Compose
+- **Docker Ready**: Full containerization
 
 ---
 
@@ -38,27 +65,40 @@ Advanced Machine Learning-Based Performance Analysis and Predictive Maintenance 
 
 ```
 mems-ml-system/
-├── backend/                    # FastAPI Backend
-│   ├── main.py                 # API endpoints
-│   ├── requirements.txt        # Python dependencies
-│   ├── Dockerfile              # Docker configuration
+├── backend/                          # FastAPI Backend
+│   ├── main.py                       # API endpoints (1100+ lines)
+│   ├── requirements.txt              # Python dependencies
+│   ├── Dockerfile                    # Docker configuration
 │   ├── database/
-│   │   └── database.py         # SQLAlchemy models
+│   │   └── database.py               # SQLAlchemy models
 │   ├── models/
-│   │   ├── ml_models.py        # ML training & persistence
-│   │   ├── data_processor.py   # Data processing utilities
-│   │   └── xai_analyzer.py     # XAI analysis
-│   └── saved_models/           # Persisted ML models
+│   │   ├── ml_models.py              # ML training & persistence
+│   │   ├── data_processor.py         # Data processing utilities
+│   │   └── xai_analyzer.py           # XAI analysis
+│   ├── data/
+│   │   └── dataset_loader.py         # NASA/CWRU dataset loaders
+│   ├── utils/
+│   │   └── health_report.py          # Unified health report builder
+│   └── saved_models/                 # Persisted ML models & LSTM
+│       ├── lstm_rul_predictor.keras  # Pre-trained LSTM model
+│       └── training_history.json     # LSTM training metrics
 │
-├── frontend/                   # React Frontend
+├── frontend/                         # React + Vite Frontend
 │   ├── src/
-│   │   ├── MEMSDashboard.jsx   # Main dashboard component
-│   │   └── main.jsx            # Entry point
-│   ├── package.json            # Node dependencies
-│   ├── vite.config.js          # Vite configuration
-│   └── Dockerfile              # Docker configuration
+│   │   ├── MEMSDashboard.jsx         # Main dashboard (3100+ lines)
+│   │   ├── main.jsx                  # Entry point
+│   │   ├── services/
+│   │   │   └── api.js                # API client
+│   │   ├── utils/
+│   │   │   ├── signalProcessing.js   # FFT/Wavelet (fallback)
+│   │   │   └── anomalyDetection.js   # Rolling Z-score detection
+│   │   └── components/               # Reusable components
+│   ├── package.json                  # Node dependencies
+│   ├── vite.config.js                # Vite configuration
+│   └── Dockerfile                    # Docker configuration
 │
-└── docker-compose.yml          # Full-stack deployment
+├── docker-compose.yml                # Full-stack deployment
+└── render.yaml                       # Render deployment config
 ```
 
 ---
@@ -75,7 +115,7 @@ mems-ml-system/
 ```bash
 cd backend
 
-# Create virtual environment (optional)
+# Create virtual environment
 python -m venv venv
 venv\Scripts\activate  # Windows
 source venv/bin/activate  # Linux/Mac
@@ -99,14 +139,14 @@ npm install
 npm run dev
 ```
 
-### Access the Application
+### Local Access
 
 | Service | URL |
 |---------|-----|
 | Frontend Dashboard | http://localhost:5173 |
 | Backend API | http://localhost:8000 |
 | API Documentation | http://localhost:8000/docs |
-| Alternative Docs | http://localhost:8000/redoc |
+| ReDoc | http://localhost:8000/redoc |
 
 ---
 
@@ -127,37 +167,46 @@ docker-compose down
 
 ## 📊 API Endpoints
 
-### Data Generation
-- `POST /api/generate-data` - Generate synthetic sensor data
+### Signal Processing
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/signal/fft` | POST | Fast Fourier Transform (numpy.fft) |
 
-### Data Upload
-- `POST /api/upload-data` - Upload CSV sensor data
+### Data Generation
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/generate-data` | POST | Generate synthetic sensor data |
+| `/api/datasets/list` | GET | List available real datasets |
 
 ### ML Models
-- `POST /api/train-models` - Train ML models
-- `POST /api/models/save` - Save trained models
-- `POST /api/models/load/{session_id}` - Load saved models
-- `GET /api/models/saved` - List saved model sessions
-- `DELETE /api/models/saved/{session_id}` - Delete saved session
-- `GET /api/models/info` - Get model information
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/train-models` | POST | Train ML models |
+| `/api/models/download-best` | GET | Download best model (.joblib) |
+| `/api/models/save` | POST | Save trained models |
+| `/api/models/load/{session_id}` | POST | Load saved models |
 
-### XAI Analysis
-- `POST /api/xai-analysis` - Generate explainability analysis
+### Deep Learning
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/lstm/status` | GET | LSTM model status |
+| `/api/lstm/train` | POST | Train LSTM model |
+| `/api/lstm/predict` | POST | LSTM RUL prediction |
 
-### Predictions
-- `POST /api/predict` - Make predictions
+### Health & XAI
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health-report` | POST | Unified health report |
+| `/api/xai-analysis` | POST | SHAP explainability |
 
-### History
-- `GET /api/history/sensor-data` - Get historical sensor data
-- `GET /api/history/trained-models` - Get trained model history
-
-### System
-- `GET /health` - Health check
-- `GET /docs` - Swagger UI
+### Notifications
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/send-alert` | POST | Email alert via Gmail SMTP |
 
 ---
 
-## 🧪 Technologies Used
+## 🧪 Technology Stack
 
 ### Backend
 | Technology | Purpose |
@@ -165,9 +214,11 @@ docker-compose down
 | FastAPI | REST API framework |
 | SQLAlchemy | Database ORM |
 | scikit-learn | Machine learning |
+| XGBoost | Gradient boosting |
+| TensorFlow/Keras | LSTM deep learning |
 | NumPy/Pandas | Data processing |
+| SHAP | Explainable AI |
 | joblib | Model persistence |
-| Uvicorn | ASGI server |
 
 ### Frontend
 | Technology | Purpose |
@@ -176,6 +227,7 @@ docker-compose down
 | Vite | Build tool |
 | Tailwind CSS | Styling |
 | Recharts | Data visualization |
+| html2canvas | Chart capture |
 | jsPDF | PDF generation |
 | Lucide React | Icons |
 
@@ -183,122 +235,72 @@ docker-compose down
 
 ## 📈 ML Models
 
-| Model | Description | Use Case |
-|-------|-------------|----------|
-| Random Forest | Ensemble of decision trees | Robust predictions |
-| Gradient Boosting | Sequential boosted trees | High accuracy |
-| SVM | Support Vector Machine | Complex boundaries |
-| Neural Network | Multi-layer perceptron | Non-linear patterns |
+| Model | Algorithm | Use Case |
+|-------|-----------|----------|
+| Random Forest | Ensemble trees | Robust baseline |
+| XGBoost | Gradient boosting | High accuracy |
+| SVR | Support Vector Regression | Small datasets |
+| Gradient Boosting | Sequential boosting | Complex patterns |
+| LSTM | Neural network | Time-series RUL |
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           MEMS ML Analysis System                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                       Frontend (React + Vite)                        │   │
-│  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────────────┐ │   │
-│  │  │   Data    │  │ Analysis  │  │   XAI     │  │    Live Monitor   │ │   │
-│  │  │   Tab     │  │    Tab    │  │   Tab     │  │       Tab         │ │   │
-│  │  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └────────┬──────────┘ │   │
-│  └────────┼──────────────┼──────────────┼─────────────────┼────────────┘   │
-│           │              │              │                 │                │
-│           └──────────────┴──────────────┴─────────────────┘                │
-│                                    │                                        │
-│                            REST API Calls                                   │
-│                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                      Backend (FastAPI + Python)                      │   │
-│  │                                                                      │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │   │
-│  │  │ Data         │  │   ML Model   │  │      XAI Analyzer        │   │   │
-│  │  │ Processor    │  │   Trainer    │  │   (SHAP, Importance)     │   │   │
-│  │  └──────┬───────┘  └──────┬───────┘  └────────────┬─────────────┘   │   │
-│  │         │                 │                       │                  │   │
-│  │         ▼                 ▼                       ▼                  │   │
-│  │  ┌──────────────────────────────────────────────────────────────┐   │   │
-│  │  │                    scikit-learn / NumPy                      │   │   │
-│  │  │   Random Forest │ Gradient Boosting │ SVM │ Neural Network   │   │   │
-│  │  └──────────────────────────────────────────────────────────────┘   │   │
-│  │                                                                      │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                        │
-│                                    ▼                                        │
-│  ┌───────────────────────┐  ┌────────────────────────────────────────┐     │
-│  │   SQLite Database     │  │        Saved Models (joblib)           │     │
-│  │  (SQLAlchemy ORM)     │  │    saved_models/{session_id}/          │     │
-│  └───────────────────────┘  └────────────────────────────────────────┘     │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                    MEMS ML System Pipeline                           │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  📊 Sensor Data → 🔧 Preprocessing → ⚙️ Feature Extraction            │
+│       │                                     │                         │
+│       ▼                                     ▼                         │
+│  🧠 ML/DL Models ──────────────────→ 📈 RUL Prediction               │
+│       │                                     │                         │
+│       ▼                                     ▼                         │
+│  🔍 XAI Analysis ──────────────────→ 🖥️ Dashboard/Alerts            │
+│                                             │                         │
+│                                             ▼                         │
+│                                      📄 Report Export                 │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow Diagram
-
-```
-┌──────────────┐     ┌───────────────┐     ┌──────────────────┐
-│   Synthetic  │     │  Real Dataset │     │    CSV Upload    │
-│    Data      │     │  (NASA/CWRU)  │     │                  │
-└──────┬───────┘     └───────┬───────┘     └────────┬─────────┘
-       │                     │                      │
-       └─────────────────────┼──────────────────────┘
-                             ▼
-                 ┌───────────────────────┐
-                 │   Data Preprocessing  │
-                 │  • Feature Extraction │
-                 │  • Noise Analysis     │
-                 │  • FFT / Wavelet      │
-                 └───────────┬───────────┘
-                             ▼
-                 ┌───────────────────────┐
-                 │    ML Model Training  │
-                 │  • Model Selection    │
-                 │  • Cross-Validation   │
-                 │  • Hyperparameters    │
-                 └───────────┬───────────┘
-                             ▼
-        ┌────────────────────┼────────────────────┐
-        ▼                    ▼                    ▼
-┌───────────────┐   ┌───────────────┐   ┌───────────────┐
-│  Predictions  │   │  XAI Analysis │   │    Alerts     │
-│  • RUL %      │   │  • SHAP       │   │  • Email      │
-│  • Anomalies  │   │  • Features   │   │  • Dashboard  │
-└───────────────┘   └───────────────┘   └───────────────┘
-```
+### Data Sources
+- **Synthetic Data**: Configurable degradation simulation
+- **NASA Bearing Dataset**: Real bearing failure data
+- **CWRU Bearing Dataset**: Classification benchmarks
+- **CSV Upload**: Custom sensor data
 
 ---
 
 ## 🔧 Configuration
 
-### Backend Environment Variables
+### Frontend Environment (`.env`)
 ```bash
-# Database (default: SQLite)
-DATABASE_URL=sqlite:///./mems_ml_database.db
+VITE_API_URL=https://mems-ml-system.onrender.com
 ```
 
-### Frontend Configuration
-The frontend automatically uses environment variables for production:
-```javascript
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+### Backend Environment (Render)
+```bash
+GMAIL_EMAIL=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-app-password
 ```
 
 ---
 
 ## 🚀 Deployment
 
-### Frontend (Vercel)
+### Frontend → Vercel
 1. Push to GitHub
-2. Connect to [Vercel](https://vercel.com)
-3. Set environment variable: `VITE_API_URL=https://your-backend.onrender.com`
+2. Connect repository to [Vercel](https://vercel.com)
+3. Set root directory: `frontend`
+4. Add environment variable: `VITE_API_URL`
 
-### Backend (Render)
-1. Connect to [Render](https://render.com)
-2. Set environment variables:
-   - `GMAIL_EMAIL` - For email alerts
-   - `GMAIL_APP_PASSWORD` - Gmail App Password
+### Backend → Render
+1. Connect repository to [Render](https://render.com)
+2. Use `render.yaml` for auto-configuration
+3. Add Gmail credentials for email alerts
 
 ---
 
@@ -308,12 +310,9 @@ This project is licensed under the MIT License.
 
 ---
 
-
-
-
 ## 🙏 Acknowledgments
 
-- NASA Prognostics Center for bearing dataset inspiration
-- Case Western Reserve University for CWRU Bearing Dataset
-- scikit-learn and FastAPI communities
-- React and Recharts visualization libraries
+- NASA Prognostics Center for bearing dataset
+- Case Western Reserve University (CWRU) Bearing Dataset
+- scikit-learn, TensorFlow, and FastAPI communities
+- React, Recharts, and Tailwind CSS teams
