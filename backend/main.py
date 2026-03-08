@@ -117,13 +117,65 @@ ml_trainer = MLModelTrainer()
 data_processor = DataProcessor()
 xai_analyzer = XAIAnalyzer()
 
-# Initialize database on startup
+# Initialize database and auto-load/train models on startup
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database tables on application startup"""
-    print("[DB] Initializing database...")
+    """Initialize database and ensure ML models are ready on startup"""
+    # 1. Initialize database
+    print("[STARTUP] Initializing database...")
     init_database()
-    print("[DB] Database ready!")
+    print("[STARTUP] Database ready!")
+    
+    # 2. Try to load existing saved models
+    print("[STARTUP] Checking for saved ML models...")
+    
+    # Option A: Load auto-saved best model + scaler
+    best_model_path = os.path.join(os.path.dirname(__file__), 'saved_models', 'best_model.joblib')
+    scaler_path = os.path.join(os.path.dirname(__file__), 'saved_models', 'scaler.joblib')
+    
+    if os.path.exists(best_model_path) and os.path.exists(scaler_path):
+        try:
+            import joblib
+            best_model = joblib.load(best_model_path)
+            ml_trainer.scaler = joblib.load(scaler_path)
+            ml_trainer.models = {"Best Model": best_model}
+            ml_trainer.best_model_name = "Best Model"
+            ml_trainer.trained = True
+            print(f"[STARTUP] ✅ Loaded saved best model from {best_model_path}")
+            return
+        except Exception as e:
+            print(f"[STARTUP] ⚠️ Failed to load saved model: {e}")
+    
+    # Option B: Check for any saved session
+    saved_models_dir = os.path.join(os.path.dirname(__file__), 'saved_models')
+    try:
+        sessions = [d for d in os.listdir(saved_models_dir) 
+                     if os.path.isdir(os.path.join(saved_models_dir, d))]
+        if sessions:
+            latest_session = sorted(sessions)[-1]
+            print(f"[STARTUP] Found saved session: {latest_session}")
+            ml_trainer.load_model(latest_session)
+            print(f"[STARTUP] ✅ Loaded models from session: {latest_session}")
+            return
+    except Exception as e:
+        print(f"[STARTUP] ⚠️ No saved sessions loadable: {e}")
+    
+    # Option C: Auto-train on synthetic data
+    print("[STARTUP] No saved models found. Auto-training on synthetic data...")
+    try:
+        synthetic_data = data_processor.generate_data(
+            sensor_type="accelerometer",
+            num_samples=1000,
+            degradation_level=25
+        )
+        df = pd.DataFrame(synthetic_data["data"])
+        results = ml_trainer.train_all_models(df)
+        print(f"[STARTUP] ✅ Auto-trained {len(results['models'])} models")
+        print(f"[STARTUP] ✅ Best model: {results['bestModel']}")
+    except Exception as e:
+        print(f"[STARTUP] ❌ Auto-training failed: {e}")
+        print("[STARTUP] ⚠️ Server running but /api/predict will return 'Models not trained yet'")
+
 
 # Pydantic models
 class SensorDataPoint(BaseModel):
