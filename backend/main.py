@@ -140,8 +140,16 @@ class GenerateDataRequest(BaseModel):
 class TrainModelsRequest(BaseModel):
     sensor_data: List[dict]
     
+class PredictionFeatures(BaseModel):
+    rms_amplitude: float
+    peak_frequency: float
+    kurtosis: float
+    crest_factor: float
+    skewness: float
+    spectral_entropy: float
+
 class PredictionRequest(BaseModel):
-    features: dict
+    features: PredictionFeatures
 
 class EmailAlertRequest(BaseModel):
     to_email: str
@@ -476,6 +484,81 @@ async def train_models(request: TrainModelsRequest):
         }
     except Exception as e:
         print(f"Error training models: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/predict", tags=["Predictions"])
+async def predict(request: PredictionRequest):
+    """
+    Run prediction using the best trained ML model.
+    
+    Accepts 6 features from the frontend and maps them to the
+    4 training features [value, temperature, drift, noise].
+    Returns fault type, confidence, health score, and remaining life.
+    """
+    # Check if models are trained
+    if not ml_trainer.trained or not ml_trainer.models:
+        raise HTTPException(status_code=400, detail="Models not trained yet")
+    
+    try:
+        f = request.features
+        
+        # Map frontend features → training features:
+        #   value       ← rms_amplitude (direct vibration measurement)
+        #   temperature ← spectral_entropy × 100 (scaled as env proxy)
+        #   drift       ← skewness (signal asymmetry → sensor drift)
+        #   noise       ← kurtosis × 0.01 (peak sharpness → noise level)
+        feature_array = np.array([[
+            f.rms_amplitude,
+            f.spectral_entropy * 100,
+            f.skewness,
+            f.kurtosis * 0.01
+        ]])
+        
+        # Scale using the fitted scaler
+        feature_scaled = ml_trainer.scaler.transform(feature_array)
+        
+        # Use the best model for prediction
+        best_name = ml_trainer.best_model_name
+        if best_name and best_name in ml_trainer.models:
+            model = ml_trainer.models[best_name]
+        else:
+            # Fallback: use first available model
+            best_name = list(ml_trainer.models.keys())[0]
+            model = ml_trainer.models[best_name]
+        
+        # Predict RUL percentage (0-100)
+        rul_prediction = float(model.predict(feature_scaled)[0])
+        rul_prediction = max(0, min(100, rul_prediction))
+        
+        # Derive health score (0-100 integer)
+        health_score = int(round(rul_prediction))
+        
+        # Derive remaining life in days (scaled from RUL%)
+        remaining_life_days = int(round(rul_prediction * 3.65))  # ~365 days at 100%
+        
+        # Determine fault type and confidence from RUL
+        if rul_prediction >= 80:
+            fault_type = "Normal"
+            confidence = min(0.95, 0.80 + (rul_prediction - 80) * 0.0075)
+        elif rul_prediction >= 50:
+            fault_type = "Early Degradation"
+            confidence = min(0.90, 0.70 + (80 - rul_prediction) * 0.005)
+        elif rul_prediction >= 25:
+            fault_type = "Moderate Wear"
+            confidence = min(0.92, 0.75 + (50 - rul_prediction) * 0.005)
+        else:
+            fault_type = "Critical Failure"
+            confidence = min(0.97, 0.85 + (25 - rul_prediction) * 0.005)
+        
+        return {
+            "fault_type": fault_type,
+            "confidence": round(confidence, 4),
+            "health_score": health_score,
+            "remaining_life_days": remaining_life_days
+        }
+    except Exception as e:
+        print(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
