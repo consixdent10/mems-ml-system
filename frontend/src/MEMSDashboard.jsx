@@ -59,19 +59,19 @@ const generatePDFReport = (sensorType, features, modelResults, rul, anomalies) =
     const anomalyList = anomalies.filter(a => a.isAnomaly);
 
     const reportContent = `
-â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-â•‘                                                                            â•‘
-â•‘              MEMS SENSOR PERFORMANCE ANALYSIS REPORT                       â•‘
-â•‘                                                                            â•‘
-â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║              MEMS SENSOR PERFORMANCE ANALYSIS REPORT                       ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
 
 Report Generated: ${new Date().toLocaleString()}
 Analysis ID: MEMS-${Date.now().toString(36).toUpperCase()}
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 EXECUTIVE SUMMARY
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Sensor Type:              ${sensorType.toUpperCase()}
 Health Status:            ${healthStatus}
@@ -79,50 +79,50 @@ Remaining Useful Life:    ${rul}%
 Anomalies Detected:       ${anomalyList.length} (${(anomalyList.length / anomalies.length * 100).toFixed(2)}% rate)
 
 Health Assessment:
-${parseFloat(rul) > 70 ? 'âœ“ Sensor is operating within normal parameters' :
-            parseFloat(rul) > 40 ? 'âš  Sensor shows signs of degradation - monitoring recommended' :
-                'âš  CRITICAL - Immediate attention required'}
+${parseFloat(rul) > 70 ? '✓ Sensor is operating within normal parameters' :
+            parseFloat(rul) > 40 ? '⚠ Sensor shows signs of degradation - monitoring recommended' :
+                '⚠ CRITICAL - Immediate attention required'}
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 STATISTICAL ANALYSIS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Signal Characteristics:
-  â€¢ Mean Value:                 ${features.mean}
-  â€¢ Standard Deviation:         ${features.std}
-  â€¢ Variance:                   ${features.variance}
-  â€¢ Signal-to-Noise Ratio:      ${features.snr}
-  â€¢ Range:                      ${features.range}
+  • Mean Value:                 ${features.mean}
+  • Standard Deviation:         ${features.std}
+  • Variance:                   ${features.variance}
+  • Signal-to-Noise Ratio:      ${features.snr}
+  • Range:                      ${features.range}
   
 Advanced Metrics:
-  â€¢ RMS (Root Mean Square):     ${features.rms}
-  â€¢ Peak-to-Peak:               ${features.peakToPeak}
-  â€¢ Crest Factor:               ${features.crestFactor}
-  â€¢ Skewness:                   ${features.skewness}
-  â€¢ Kurtosis:                   ${features.kurtosis}
+  • RMS (Root Mean Square):     ${features.rms}
+  • Peak-to-Peak:               ${features.peakToPeak}
+  • Crest Factor:               ${features.crestFactor}
+  • Skewness:                   ${features.skewness}
+  • Kurtosis:                   ${features.kurtosis}
 
 Signal Quality Assessment:
-${parseFloat(features.snr) > 20 ? 'âœ“ Excellent signal quality' :
-            parseFloat(features.snr) > 10 ? 'âš  Acceptable signal quality' :
-                'âš  Poor signal quality - noise filtering recommended'}
+${parseFloat(features.snr) > 20 ? '✓ Excellent signal quality' :
+            parseFloat(features.snr) > 10 ? '⚠ Acceptable signal quality' :
+                '⚠ Poor signal quality - noise filtering recommended'}
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 MACHINE LEARNING MODEL PERFORMANCE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 ${modelResults.length > 0 ? modelResults.map((m, idx) => `
 Model ${idx + 1}: ${m.modelType}
-${'â”€'.repeat(78)}
+${'─'.repeat(78)}
   Regression Metrics (RUL Prediction):
-    â€¢ MAE (Mean Absolute Error):   ${m.mae?.toFixed(2) || 'N/A'}
-    â€¢ RMSE (Root Mean Sq Error):   ${m.rmse?.toFixed(2) || 'N/A'}
-    â€¢ MSE (Mean Squared Error):    ${m.mse?.toFixed(4) || 'N/A'}
-    â€¢ RÂ² Score (Coefficient):      ${m.r2Score?.toFixed(4) || 'N/A'}
-    â€¢ MAPE (% Error):              ${m.mape?.toFixed(2) || 'N/A'}%
-    â€¢ Training Time:               ${m.trainingTime} seconds
-    â€¢ Training/Test Split:         ${m.trainingSize}/${m.testSize} samples
+    • MAE (Mean Absolute Error):   ${m.mae?.toFixed(2) || 'N/A'}
+    • RMSE (Root Mean Sq Error):   ${m.rmse?.toFixed(2) || 'N/A'}
+    • MSE (Mean Squared Error):    ${m.mse?.toFixed(4) || 'N/A'}
+    • R² Score (Coefficient):      ${m.r2Score?.toFixed(4) || 'N/A'}
+    • MAPE (% Error):              ${m.mape?.toFixed(2) || 'N/A'}%
+    • Training Time:               ${m.trainingTime} seconds
+    • Training/Test Split:         ${m.trainingSize}/${m.testSize} samples
   
   Performance Grade:              ${m.r2Score >= 0.85 ? 'A (Excellent)' :
                         m.r2Score >= 0.70 ? 'B (Good)' :
@@ -133,10 +133,10 @@ Best Performing Model:        ${modelResults.length > 0 ?
             modelResults.reduce((best, m) => (m.rmse || 999) < (best.rmse || 999) ? m : best).modelType : 'N/A'}
 (Selected by: Lowest RMSE)
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 ANOMALY DETECTION ANALYSIS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Detection Method:             Isolation Forest (Z-Score Based)
 Threshold:                    2.5 Standard Deviations
@@ -145,20 +145,20 @@ Anomalies Detected:           ${anomalyList.length}
 Anomaly Rate:                 ${(anomalyList.length / anomalies.length * 100).toFixed(2)}%
 
 Anomaly Assessment:
-${anomalyList.length === 0 ? 'âœ“ No anomalies detected - sensor operating normally' :
-            anomalyList.length < anomalies.length * 0.05 ? 'âœ“ Low anomaly rate - within acceptable limits' :
-                anomalyList.length < anomalies.length * 0.10 ? 'âš  Moderate anomaly rate - investigate potential issues' :
-                    'âš  High anomaly rate - immediate investigation required'}
+${anomalyList.length === 0 ? '✓ No anomalies detected - sensor operating normally' :
+            anomalyList.length < anomalies.length * 0.05 ? '✓ Low anomaly rate - within acceptable limits' :
+                anomalyList.length < anomalies.length * 0.10 ? '⚠ Moderate anomaly rate - investigate potential issues' :
+                    '⚠ High anomaly rate - immediate investigation required'}
 
 Recent Anomalies (Last 5):
 ${anomalyList.length > 0 ? anomalyList.slice(-5).reverse().map((a, idx) =>
                         `  ${idx + 1}. Time: ${a.time}s | Value: ${a.value} | Score: ${a.score}`
                     ).join('\n') : '  None detected'}
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 FAILURE MODE ANALYSIS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Predicted Failure Mechanisms:
 
@@ -182,100 +182,100 @@ Predicted Failure Mechanisms:
    Risk Level:                ${parseFloat(rul) > 70 ? 'Low' : parseFloat(rul) > 40 ? 'Medium' : 'High'}
    Impact:                    Structural integrity concerns
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 MAINTENANCE RECOMMENDATIONS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Immediate Actions Required:
-${parseFloat(rul) < 30 ? `  âš  CRITICAL: Replace sensor immediately
-  âš  CRITICAL: Implement backup sensor system
-  âš  Schedule replacement within 48 hours` :
-            parseFloat(rul) < 50 ? `  âš  Schedule calibration within 7 days
-  âš  Increase monitoring frequency
-  âš  Prepare replacement sensor` :
-                parseFloat(rul) < 70 ? `  â€¢ Monitor sensor performance weekly
-  â€¢ Schedule calibration within 30 days
-  â€¢ Continue normal operation` :
-                    `  âœ“ No immediate action required
-  â€¢ Continue routine monitoring
-  â€¢ Standard maintenance schedule`}
+${parseFloat(rul) < 30 ? `  ⚠ CRITICAL: Replace sensor immediately
+  ⚠ CRITICAL: Implement backup sensor system
+  ⚠ Schedule replacement within 48 hours` :
+            parseFloat(rul) < 50 ? `  ⚠ Schedule calibration within 7 days
+  ⚠ Increase monitoring frequency
+  ⚠ Prepare replacement sensor` :
+                parseFloat(rul) < 70 ? `  • Monitor sensor performance weekly
+  • Schedule calibration within 30 days
+  • Continue normal operation` :
+                    `  ✓ No immediate action required
+  • Continue routine monitoring
+  • Standard maintenance schedule`}
 
 Maintenance Schedule:
-  â€¢ Next Calibration:         ${parseFloat(rul) > 70 ? '30 days' : parseFloat(rul) > 40 ? '15 days' : '7 days'}
-  â€¢ Next Inspection:          ${Math.ceil((parseFloat(rul) / 100) * 30)} days
-  â€¢ Expected Replacement:     ${Math.ceil((parseFloat(rul) / 100) * 180)} days
-  â€¢ Monitoring Frequency:     ${parseFloat(rul) > 70 ? 'Weekly' : parseFloat(rul) > 40 ? 'Daily' : 'Hourly'}
+  • Next Calibration:         ${parseFloat(rul) > 70 ? '30 days' : parseFloat(rul) > 40 ? '15 days' : '7 days'}
+  • Next Inspection:          ${Math.ceil((parseFloat(rul) / 100) * 30)} days
+  • Expected Replacement:     ${Math.ceil((parseFloat(rul) / 100) * 180)} days
+  • Monitoring Frequency:     ${parseFloat(rul) > 70 ? 'Weekly' : parseFloat(rul) > 40 ? 'Daily' : 'Hourly'}
 
 Preventive Measures:
-  â€¢ Regular calibration every ${parseFloat(rul) > 70 ? '30' : '15'} days
-  â€¢ Temperature compensation verification
-  â€¢ Environmental condition monitoring
-  â€¢ Periodic noise characterization
-  â€¢ Vibration analysis and mitigation
+  • Regular calibration every ${parseFloat(rul) > 70 ? '30' : '15'} days
+  • Temperature compensation verification
+  • Environmental condition monitoring
+  • Periodic noise characterization
+  • Vibration analysis and mitigation
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 COST-BENEFIT ANALYSIS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Estimated Costs:
-  â€¢ Calibration Service:      $150 - $300
-  â€¢ Sensor Replacement:       $500 - $1,500
-  â€¢ Unplanned Downtime:       $2,000 - $10,000/hour
+  • Calibration Service:      $150 - $300
+  • Sensor Replacement:       $500 - $1,500
+  • Unplanned Downtime:       $2,000 - $10,000/hour
 
 Cost Avoidance through Predictive Maintenance:
-  â€¢ Early Detection Savings:  $5,000 - $20,000
-  â€¢ Prevented Downtime:       $10,000 - $50,000
-  â€¢ Extended Sensor Life:     $500 - $1,500
+  • Early Detection Savings:  $5,000 - $20,000
+  • Prevented Downtime:       $10,000 - $50,000
+  • Extended Sensor Life:     $500 - $1,500
 
 ROI of Predictive Maintenance:  250% - 400%
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 TECHNICAL SPECIFICATIONS
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Sensor Configuration:
-  â€¢ Type:                     ${sensorType.charAt(0).toUpperCase() + sensorType.slice(1)}
-  â€¢ Measurement Unit:         ${getSensorUnit()}
-  â€¢ Sampling Rate:            100 Hz
-  â€¢ Data Points Analyzed:     ${anomalies.length}
-  â€¢ Analysis Duration:        ${(anomalies.length / 100).toFixed(1)} seconds
+  • Type:                     ${sensorType.charAt(0).toUpperCase() + sensorType.slice(1)}
+  • Measurement Unit:         ${getSensorUnit()}
+  • Sampling Rate:            100 Hz
+  • Data Points Analyzed:     ${anomalies.length}
+  • Analysis Duration:        ${(anomalies.length / 100).toFixed(1)} seconds
 
 Operating Conditions:
-  â€¢ Temperature Range:        15Â°C - 35Â°C
-  â€¢ Humidity Range:           30% - 70%
-  â€¢ Vibration Exposure:       Monitored
-  â€¢ Environmental:            Industrial
+  • Temperature Range:        15°C - 35°C
+  • Humidity Range:           30% - 70%
+  • Vibration Exposure:       Monitored
+  • Environmental:            Industrial
 
 Data Processing:
-  â€¢ FFT Analysis:             Completed
-  â€¢ Wavelet Transform:        Haar Decomposition
-  â€¢ Anomaly Detection:        Isolation Forest Algorithm
-  â€¢ ML Models:                ${modelResults.length} trained and validated
+  • FFT Analysis:             Completed
+  • Wavelet Transform:        Haar Decomposition
+  • Anomaly Detection:        Isolation Forest Algorithm
+  • ML Models:                ${modelResults.length} trained and validated
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 COMPLIANCE & QUALITY ASSURANCE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Standards Compliance:
-  âœ“ ISO 9001:2015 Quality Management
-  âœ“ ISO/IEC 17025 Testing and Calibration
-  âœ“ IEC 61508 Functional Safety
-  ${parseFloat(rul) > 50 ? 'âœ“' : 'âš '} Performance within specification limits
+  ✓ ISO 9001:2015 Quality Management
+  ✓ ISO/IEC 17025 Testing and Calibration
+  ✓ IEC 61508 Functional Safety
+  ${parseFloat(rul) > 50 ? '✓' : '⚠'} Performance within specification limits
 
 Quality Metrics:
-  â€¢ Measurement Uncertainty:  Â±${(parseFloat(features.std) / parseFloat(features.mean) * 100).toFixed(2)}%
-  â€¢ Calibration Status:       ${parseFloat(rul) > 70 ? 'Valid' : parseFloat(rul) > 40 ? 'Due Soon' : 'Overdue'}
-  â€¢ Traceability:             Full chain maintained
-  â€¢ Documentation:            Complete
+  • Measurement Uncertainty:  ±${(parseFloat(features.std) / parseFloat(features.mean) * 100).toFixed(2)}%
+  • Calibration Status:       ${parseFloat(rul) > 70 ? 'Valid' : parseFloat(rul) > 40 ? 'Due Soon' : 'Overdue'}
+  • Traceability:             Full chain maintained
+  • Documentation:            Complete
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 CONCLUSION
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Overall Assessment:
 ${parseFloat(rul) > 70 ?
@@ -297,10 +297,10 @@ Next Steps:
   4. Update maintenance logs and documentation
   5. Schedule follow-up analysis in ${parseFloat(rul) > 70 ? '30' : parseFloat(rul) > 40 ? '15' : '7'} days
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 REPORT APPROVAL
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 Prepared By:        ML Analysis System v2.0
 Analysis Date:      ${new Date().toLocaleDateString()}
@@ -308,38 +308,38 @@ Report ID:          MEMS-${Date.now().toString(36).toUpperCase()}
 Reviewed By:        _________________________ Date: ___________
 Approved By:        _________________________ Date: ___________
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
 APPENDIX
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+────────────────────────────────────────────────────────────────────────────
 
 A. Glossary of Terms
-   â€¢ RUL: Remaining Useful Life
-   â€¢ SNR: Signal-to-Noise Ratio
-   â€¢ RMS: Root Mean Square
-   â€¢ FFT: Fast Fourier Transform
-   â€¢ MSE: Mean Squared Error
-   â€¢ ROI: Return on Investment
+   • RUL: Remaining Useful Life
+   • SNR: Signal-to-Noise Ratio
+   • RMS: Root Mean Square
+   • FFT: Fast Fourier Transform
+   • MSE: Mean Squared Error
+   • ROI: Return on Investment
 
 B. References
-   â€¢ ISO 9001:2015 Quality Management Systems
-   â€¢ IEC 61508 Functional Safety Standards
-   â€¢ MEMS Sensor Best Practices Guide
-   â€¢ Predictive Maintenance Handbook
+   • ISO 9001:2015 Quality Management Systems
+   • IEC 61508 Functional Safety Standards
+   • MEMS Sensor Best Practices Guide
+   • Predictive Maintenance Handbook
 
 C. Contact Information
-   â€¢ Technical Support: support@mems-analysis.com
-   â€¢ Emergency Hotline: +1-800-MEMS-911
-   â€¢ Documentation: docs.mems-analysis.com
+   • Technical Support: support@mems-analysis.com
+   • Emergency Hotline: +1-800-MEMS-911
+   • Documentation: docs.mems-analysis.com
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 
                             END OF REPORT
 
              This report is confidential and for authorized use only.
-                  Â© 2026 MEMS Sensor Analysis System
+                  © 2026 MEMS Sensor Analysis System
 
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+════════════════════════════════════════════════════════════════════════════
 `;
 
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -387,8 +387,6 @@ const MEMSDashboard = () => {
     });
     const [datasetInfo, setDatasetInfo] = useState(null);
 
-
-
     // Data Upload State
     const [uploadedData, setUploadedData] = useState(null);
     const [uploadedFileName, setUploadedFileName] = useState('');
@@ -401,8 +399,6 @@ const MEMSDashboard = () => {
     const [emailSent, setEmailSent] = useState(false);
     const [emailRecipient, setEmailRecipient] = useState('maintenance@company.com');
     const [currentAlertType, setCurrentAlertType] = useState('warning');
-
-
 
     // XAI State
     const [shapValues, setShapValues] = useState([]);
@@ -437,8 +433,6 @@ const MEMSDashboard = () => {
         generateData();
     }, [sensorType, degradation]);
 
-
-
     const generateData = async () => {
         setIsLoadingData(true);
         setApiError('');
@@ -463,7 +457,7 @@ const MEMSDashboard = () => {
             setAnomalies(response.anomalies);
             setSensorCharacteristics(response.sensor_characteristics || null);
 
-            // Process FFT using backend numpy (O(N log N) vs local O(NÂ²))
+            // Process FFT using backend numpy (O(N log N) vs local O(N²))
             try {
                 const fftResult = await api.computeFFT(response.data);
                 if (fftResult.success) {
@@ -589,10 +583,10 @@ const MEMSDashboard = () => {
     const downloadBestModel = async () => {
         try {
             await api.downloadBestModel();
-            alert('âœ… Best model downloaded successfully!');
+            alert('✅ Best model downloaded successfully!');
         } catch (error) {
             console.error('Error downloading model:', error);
-            alert('âŒ ' + error.message);
+            alert('❌ ' + error.message);
         }
     };
 
@@ -666,7 +660,7 @@ const MEMSDashboard = () => {
 
         // Sensor Data
         csvContent += 'SENSOR MEASUREMENTS\n';
-        csvContent += 'Time (s),Value (' + getSensorUnit() + '),Temperature (Â°C),Humidity (%),Drift,Noise,Signal,Vibration\n';
+        csvContent += 'Time (s),Value (' + getSensorUnit() + '),Temperature (°C),Humidity (%),Drift,Noise,Signal,Vibration\n';
         sensorData.forEach(row => {
             csvContent += `${row.time},${row.value},${row.temperature},${row.humidity},${row.drift},${row.noise},${row.signal},${row.vibration}\n`;
         });
@@ -684,7 +678,7 @@ const MEMSDashboard = () => {
         // Model Results
         if (modelResults.length > 0) {
             csvContent += 'MODEL PERFORMANCE (RUL Regression)\n';
-            csvContent += 'Model,MAE,RMSE,MSE,RÂ² Score,MAPE (%),Training Time (s)\n';
+            csvContent += 'Model,MAE,RMSE,MSE,R² Score,MAPE (%),Training Time (s)\n';
             modelResults.forEach(m => {
                 csvContent += `${m.modelType},${m.mae || 'N/A'},${m.rmse || 'N/A'},${m.mse || 'N/A'},${m.r2Score || 'N/A'},${m.mape || 'N/A'},${m.trainingTime || 'N/A'}\n`;
             });
@@ -707,7 +701,7 @@ const MEMSDashboard = () => {
 
 
         if (!features || !sensorData || sensorData.length === 0) {
-            alert('âš ï¸ Please generate data first!\n\n1. Select a sensor type\n2. Click the "Generate" button\n3. Then click "Report"');
+            alert('⚠️ Please generate data first!\n\n1. Select a sensor type\n2. Click the "Generate" button\n3. Then click "Report"');
             return;
         }
 
@@ -847,7 +841,7 @@ const MEMSDashboard = () => {
                 doc.text('Model', 25, yPos);
                 doc.text('Accuracy', 70, yPos);
                 doc.text('MSE', 100, yPos);
-                doc.text('RÂ² Score', 130, yPos);
+                doc.text('R² Score', 130, yPos);
                 doc.text('F1 Score', 160, yPos);
                 yPos += 10;
 
@@ -879,19 +873,19 @@ const MEMSDashboard = () => {
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(...grayText);
 
-            doc.text(`â€¢ Next Calibration: ${parseFloat(rul) > 70 ? '30 days' : parseFloat(rul) > 40 ? '15 days' : '7 days'}`, 25, yPos);
+            doc.text(`• Next Calibration: ${parseFloat(rul) > 70 ? '30 days' : parseFloat(rul) > 40 ? '15 days' : '7 days'}`, 25, yPos);
             yPos += 7;
-            doc.text(`â€¢ Monitoring Frequency: ${parseFloat(rul) > 70 ? 'Weekly' : parseFloat(rul) > 40 ? 'Daily' : 'Hourly'}`, 25, yPos);
+            doc.text(`• Monitoring Frequency: ${parseFloat(rul) > 70 ? 'Weekly' : parseFloat(rul) > 40 ? 'Daily' : 'Hourly'}`, 25, yPos);
             yPos += 7;
 
             if (parseFloat(rul) < 50) {
                 doc.setTextColor(245, 158, 11);
-                doc.text('â€¢ WARNING: Schedule calibration within 7 days', 25, yPos);
+                doc.text('• WARNING: Schedule calibration within 7 days', 25, yPos);
                 yPos += 7;
             }
             if (parseFloat(rul) < 30) {
                 doc.setTextColor(239, 68, 68);
-                doc.text('â€¢ CRITICAL: Plan sensor replacement immediately', 25, yPos);
+                doc.text('• CRITICAL: Plan sensor replacement immediately', 25, yPos);
                 yPos += 7;
             }
 
@@ -901,17 +895,17 @@ const MEMSDashboard = () => {
             doc.setTextColor(...grayText);
             doc.setFontSize(9);
             doc.text('MEMS Sensor ML Analysis System - Predictive Maintenance Platform', 105, 283, { align: 'center' });
-            doc.text(`Â© ${reportDate.getFullYear()} All Rights Reserved`, 105, 290, { align: 'center' });
+            doc.text(`© ${reportDate.getFullYear()} All Rights Reserved`, 105, 290, { align: 'center' });
 
             // Save PDF
             const fileName = `MEMS_Report_${sensorType}_${reportDate.toISOString().split('T')[0]}.pdf`;
             doc.save(fileName);
 
-            alert(`âœ… PDF Report downloaded successfully!\n\nFile: ${fileName}`);
+            alert(`✅ PDF Report downloaded successfully!\n\nFile: ${fileName}`);
 
         } catch (error) {
             console.error('Error generating PDF report:', error);
-            alert('âŒ Error generating PDF: ' + error.message);
+            alert('❌ Error generating PDF: ' + error.message);
         }
     };
 
@@ -975,7 +969,7 @@ const MEMSDashboard = () => {
             const details = predictionExplanation.status_reason_details;
             doc.setTextColor(...darkText);
             doc.setFontSize(9);
-            doc.text(`SNR: ${details.snr} | Drift: ${details.drift} | Noise: ${details.noise} | Temp: ${details.temperature}Â°C | RUL: ${details.rul_percent}%`, 20, yPos);
+            doc.text(`SNR: ${details.snr} | Drift: ${details.drift} | Noise: ${details.noise} | Temp: ${details.temperature}°C | RUL: ${details.rul_percent}%`, 20, yPos);
             yPos += 12;
         }
 
@@ -993,7 +987,7 @@ const MEMSDashboard = () => {
         yPos += 8;
         doc.setFontSize(9);
         doc.setTextColor(...grayText);
-        doc.text(`Source: ${predictionExplanation.confidence_source || 'Derived from best model RÂ² and ensemble agreement'}`, 20, yPos);
+        doc.text(`Source: ${predictionExplanation.confidence_source || 'Derived from best model R² and ensemble agreement'}`, 20, yPos);
         yPos += 12;
 
         // Top Contributing Factors
@@ -1049,7 +1043,7 @@ const MEMSDashboard = () => {
         // Save
         const fileName = `XAI_Summary_${reportDate.toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
-        alert(`âœ… XAI Summary PDF downloaded!\\nFile: ${fileName}`);
+        alert(`✅ XAI Summary PDF downloaded!\\nFile: ${fileName}`);
     };
 
     const sendAlert = (alertType) => {
@@ -1107,8 +1101,6 @@ const MEMSDashboard = () => {
             setSecondSensorData(data2);
         }
     };
-
-
 
     // Handle File Upload
     const handleFileUpload = async (event) => {
@@ -1173,7 +1165,7 @@ const MEMSDashboard = () => {
 
             // Show success message
             setTimeout(() => {
-                alert(`âœ… File uploaded successfully!\n\nðŸ“ ${fileName}\nðŸ“Š ${response.data.length} data points loaded\nðŸ” Analysis complete\n\nYou can now view the analysis in all tabs.`);
+                alert(`✅ File uploaded successfully!\n\n📁 ${fileName}\n📊 ${response.data.length} data points loaded\n🔍 Analysis complete\n\nYou can now view the analysis in all tabs.`);
             }, 100);
 
         } catch (error) {
@@ -1193,9 +1185,9 @@ const MEMSDashboard = () => {
     };
 
     const getSensorUnit = () => {
-        if (sensorType === 'accelerometer') return 'm/sÂ²';
+        if (sensorType === 'accelerometer') return 'm/s²';
         if (sensorType === 'gyroscope') return 'deg/s';
-        if (sensorType === 'temperature') return 'Â°C';
+        if (sensorType === 'temperature') return '°C';
         return 'kPa';
     };
 
@@ -1218,10 +1210,10 @@ const MEMSDashboard = () => {
                         toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
                     }`}>
                     <span className="text-xl">
-                        {toast.type === 'success' ? 'âœ…' : toast.type === 'warning' ? 'âš ï¸' : toast.type === 'error' ? 'âŒ' : 'â„¹ï¸'}
+                        {toast.type === 'success' ? '✅' : toast.type === 'warning' ? '⚠️' : toast.type === 'error' ? '❌' : 'ℹ️'}
                     </span>
                     <span className="font-medium">{toast.message}</span>
-                    <button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-white/80 hover:text-white">âœ•</button>
+                    <button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-white/80 hover:text-white">✕</button>
                 </div>
             )}
 
@@ -1481,9 +1473,9 @@ const MEMSDashboard = () => {
                         ) : (
                             <div className="bg-green-900/20 border border-green-500 rounded-lg p-4 flex items-start">
                                 <div className="flex-1">
-                                    <p className="font-semibold text-green-400 mb-1">âœ… File Loaded Successfully</p>
+                                    <p className="font-semibold text-green-400 mb-1">✅ File Loaded Successfully</p>
                                     <p className="text-sm text-gray-300">
-                                        ðŸ“ <strong>{uploadedFileName}</strong> â€¢ {uploadedData?.length || 0} data points
+                                        📁 <strong>{uploadedFileName}</strong> • {uploadedData?.length || 0} data points
                                     </p>
                                     <p className="text-sm text-gray-400 mt-2">
                                         Analysis has been performed on your uploaded data. View results in all tabs.
@@ -1595,7 +1587,7 @@ const MEMSDashboard = () => {
                                 <ResponsiveContainer width="100%" height={300}>
                                     <ScatterChart>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                        <XAxis dataKey="temperature" stroke="#9CA3AF" tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : v} label={{ value: 'Temperature (Â°C)', position: 'insideBottom', offset: -5 }} />
+                                        <XAxis dataKey="temperature" stroke="#9CA3AF" tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : v} label={{ value: 'Temperature (°C)', position: 'insideBottom', offset: -5 }} />
                                         <YAxis dataKey="value" stroke="#9CA3AF" label={{ value: `Value (${getSensorUnit()})`, angle: -90, position: 'insideLeft' }} />
                                         <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} formatter={(value) => typeof value === 'number' ? value.toFixed(2) : value} />
                                         <Scatter data={sensorData.slice(0, 200)} fill="#8B5CF6" />
@@ -1605,7 +1597,6 @@ const MEMSDashboard = () => {
                         </div>
                     )}
 
-
                     {activeTab === 'models' && (
                         <ModelsTab
                             modelResults={modelResults}
@@ -1613,7 +1604,9 @@ const MEMSDashboard = () => {
                             predictionsSample={predictionsSample}
                             isTraining={isTraining}
                             trainModels={trainModels}
+                            getFeatureImportance={getFeatureImportance}
                             trainError={trainError}
+                            generalizationMetrics={generalizationMetrics}
                             onDownloadModel={downloadBestModel}
                         />
                     )}
@@ -1682,14 +1675,14 @@ const MEMSDashboard = () => {
                                                     {predictionExplanation.triggered_rule && (
                                                         <div className="mt-3 p-3 rounded bg-slate-700 border border-slate-600">
                                                             <p className="text-sm font-medium text-gray-300">
-                                                                <span className="text-blue-400">Reason:</span> {predictionExplanation.triggered_rule} â€” {predictionExplanation.rule_reason}
+                                                                <span className="text-blue-400">Reason:</span> {predictionExplanation.triggered_rule} — {predictionExplanation.rule_reason}
                                                             </p>
                                                             {predictionExplanation.status_reason_details && (
                                                                 <div className="mt-2 flex flex-wrap gap-2">
                                                                     <span className="text-xs px-2 py-1 rounded bg-slate-600">SNR: {predictionExplanation.status_reason_details.snr}</span>
                                                                     <span className="text-xs px-2 py-1 rounded bg-slate-600">Drift: {predictionExplanation.status_reason_details.drift}</span>
                                                                     <span className="text-xs px-2 py-1 rounded bg-slate-600">Noise: {predictionExplanation.status_reason_details.noise}</span>
-                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">Temp: {predictionExplanation.status_reason_details.temperature}Â°C</span>
+                                                                    <span className="text-xs px-2 py-1 rounded bg-slate-600">Temp: {predictionExplanation.status_reason_details.temperature}°C</span>
                                                                     <span className="text-xs px-2 py-1 rounded bg-slate-600">RUL: {predictionExplanation.status_reason_details.rul_percent}%</span>
                                                                 </div>
                                                             )}
@@ -1701,9 +1694,9 @@ const MEMSDashboard = () => {
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <p className="text-sm text-gray-400">Model Confidence</p>
                                                         <div className="relative group">
-                                                            <span className="cursor-help text-gray-500 hover:text-blue-400">â“˜</span>
+                                                            <span className="cursor-help text-gray-500 hover:text-blue-400">ⓘ</span>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-xs text-gray-300 w-64 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                                                Confidence is derived from best model performance (RÂ²) and agreement between models. Clamped to 30%â€“99% to avoid misleading extremes.
+                                                                Confidence is derived from best model performance (R²) and agreement between models. Clamped to 30%–99% to avoid misleading extremes.
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1735,7 +1728,7 @@ const MEMSDashboard = () => {
                                                             </div>
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <span className="text-sm text-gray-400">
-                                                                    {reason.direction === 'increases' ? 'â†‘' : 'â†“'} {reason.direction} confidence
+                                                                    {reason.direction === 'increases' ? '↑' : '↓'} {reason.direction} confidence
                                                                 </span>
                                                                 {reason.impact_on_rul && (
                                                                     <span className={`text-xs px-2 py-0.5 rounded ${reason.impact_type === 'bad' ? 'bg-red-900/50 text-red-300' : reason.impact_type === 'good' ? 'bg-green-900/50 text-green-300' : 'bg-gray-700 text-gray-300'}`}>
@@ -1752,7 +1745,7 @@ const MEMSDashboard = () => {
 
                                         <div className="mt-4 bg-blue-900/30 border border-blue-500 rounded-lg p-4">
                                             <p className="text-sm">
-                                                <strong>Model Used:</strong> {predictionExplanation.modelUsed} â€¢
+                                                <strong>Model Used:</strong> {predictionExplanation.modelUsed} •
                                                 <strong className="ml-2">Explanation Method:</strong> {predictionExplanation.explanation_method || 'SHAP-like Feature Attribution (Approximation)'}
                                             </p>
                                         </div>
@@ -1822,8 +1815,6 @@ const MEMSDashboard = () => {
                                             </div>
                                         </div>
                                     </div>
-
-
 
                                     {/* Decision Rules */}
                                     <div className="bg-slate-700 rounded-lg p-6">
@@ -1972,7 +1963,7 @@ const MEMSDashboard = () => {
                                                         note.includes('Urgent') ? 'text-orange-400' :
                                                             'text-green-400'
                                                         }`}>
-                                                        {note.includes('CRITICAL') ? 'ðŸ”´' : note.includes('Urgent') ? 'âš ï¸' : 'âœ“'}
+                                                        {note.includes('CRITICAL') ? '🔴' : note.includes('Urgent') ? '⚠️' : '✓'}
                                                     </span>
                                                     <span>{note}</span>
                                                 </li>
@@ -1980,24 +1971,24 @@ const MEMSDashboard = () => {
                                                     <>
                                                         {parseFloat(rul) < 50 && (
                                                             <li className="flex items-start">
-                                                                <span className="text-orange-400 mr-2">âš ï¸</span>
+                                                                <span className="text-orange-400 mr-2">⚠️</span>
                                                                 <span>Schedule calibration within 7 days</span>
                                                             </li>
                                                         )}
                                                         {parseFloat(rul) >= 50 && (
                                                             <li className="flex items-start">
-                                                                <span className="text-green-400 mr-2">âœ“</span>
+                                                                <span className="text-green-400 mr-2">✓</span>
                                                                 <span>Sensor operating within normal parameters</span>
                                                             </li>
                                                         )}
                                                     </>
                                                 )}
                                             <li className="flex items-start">
-                                                <span className="text-blue-400 mr-2">ðŸ“…</span>
+                                                <span className="text-blue-400 mr-2">📅</span>
                                                 <span>Next check: {healthReport?.maintenance_schedule?.next_check_days ?? Math.ceil((100 - degradation) * 2)} days</span>
                                             </li>
                                             <li className="flex items-start">
-                                                <span className="text-purple-400 mr-2">ðŸ”§</span>
+                                                <span className="text-purple-400 mr-2">🔧</span>
                                                 <span>Calibration interval: {healthReport?.maintenance_schedule?.calibration_interval_days ?? (parseFloat(rul) > 70 ? 30 : 15)} days</span>
                                             </li>
                                         </ul>
@@ -2046,7 +2037,7 @@ const MEMSDashboard = () => {
                         activeTab === 'anomaly' && (
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center flex-wrap gap-4">
-                                    <h3 className="text-xl font-semibold">ðŸ” Rolling Z-Score Anomaly Detection</h3>
+                                    <h3 className="text-xl font-semibold">🔍 Rolling Z-Score Anomaly Detection</h3>
                                     <div className="bg-slate-700 px-4 py-2 rounded-lg">
                                         <span className="text-gray-400">Total Anomalies: </span>
                                         <span className="font-bold text-red-400">{detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).length}</span>
@@ -2097,7 +2088,6 @@ const MEMSDashboard = () => {
                                     </div>
                                 </div>
 
-
                                 {/* Scatter Chart with Anomalies */}
                                 <div>
                                     <h4 className="text-lg font-semibold mb-4">Anomaly Detection Over Time</h4>
@@ -2113,7 +2103,6 @@ const MEMSDashboard = () => {
                                         </ScatterChart>
                                     </ResponsiveContainer>
                                 </div>
-
 
                                 {/* Recent Anomalies List */}
                                 <div className="bg-slate-700 rounded-lg p-4">
@@ -2134,7 +2123,6 @@ const MEMSDashboard = () => {
                             </div>
                         )
                     }
-
                 </div >
 
                 {/* Footer */}
