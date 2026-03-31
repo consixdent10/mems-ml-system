@@ -1010,7 +1010,7 @@ async def send_email_alert(request: EmailAlertRequest):
         msg.attach(MIMEText(html_body, "html"))
         
         # Check if credentials are configured
-        if EMAIL_CONFIG["sender_email"] == "your-email@gmail.com":
+        if EMAIL_CONFIG["sender_email"] in ["your-email@gmail.com", ""]:
             # Demo mode - simulate sending
             print(f"[DEMO MODE] Email would be sent to: {request.to_email}")
             print(f"[DEMO MODE] Subject: {subject}")

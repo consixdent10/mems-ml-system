@@ -576,17 +576,16 @@ const MEMSDashboard = () => {
 
             // Generate alerts
             const newAlerts = [];
-            if (parseFloat(response.rul) < 50) {
-                newAlerts.push({
-                    type: 'warning',
-                    message: 'Calibration recommended within 7 days',
-                    timestamp: new Date().toLocaleTimeString()
-                });
-            }
             if (parseFloat(response.rul) < 30) {
                 newAlerts.push({
                     type: 'critical',
                     message: 'Critical: Plan sensor replacement immediately',
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            } else if (parseFloat(response.rul) < 50) {
+                newAlerts.push({
+                    type: 'warning',
+                    message: 'Calibration recommended within 7 days',
                     timestamp: new Date().toLocaleTimeString()
                 });
             }
@@ -1242,7 +1241,19 @@ const MEMSDashboard = () => {
 
             // Generate alerts
             const newAlerts = [];
-            if (parseFloat(response.rul) < 70) {
+            if (parseFloat(response.rul) < 30) {
+                newAlerts.push({
+                    type: 'critical',
+                    message: 'Critical: Plan sensor replacement immediately',
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            } else if (parseFloat(response.rul) < 50) {
+                newAlerts.push({
+                    type: 'warning',
+                    message: 'Calibration recommended within 7 days',
+                    timestamp: new Date().toLocaleTimeString()
+                });
+            } else if (parseFloat(response.rul) < 70) {
                 newAlerts.push({
                     type: 'warning',
                     message: 'Uploaded data shows potential degradation - review recommended',
