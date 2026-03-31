@@ -1,13 +1,12 @@
 import React from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     ScatterChart, Scatter, ReferenceLine
 } from 'recharts';
 
 /**
  * Models Tab Component
- * Displays ML model training interface, leaderboard, and performance charts
+ * Displays ML model training interface, leaderboard, and actual vs predicted chart
  */
 const ModelsTab = ({
     modelResults,
@@ -15,9 +14,7 @@ const ModelsTab = ({
     predictionsSample,
     isTraining,
     trainModels,
-    getFeatureImportance,
     trainError,
-    generalizationMetrics,
     onDownloadModel
 }) => {
     return (
@@ -90,98 +87,6 @@ const ModelsTab = ({
                         )}
                     </div>
 
-                    {/* Generalization Test Card */}
-                    {generalizationMetrics && (
-                        <div className="bg-slate-700 rounded-lg p-4 mb-6 border-l-4 border-yellow-500">
-                            <h4 className="text-lg font-semibold mb-3 text-yellow-400">🧪 Generalization Test</h4>
-                            <p className="text-xs text-gray-400 mb-3">{generalizationMetrics.description}</p>
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                                <div className="text-center">
-                                    <p className="text-gray-400">R² Score</p>
-                                    <p className={`text-2xl font-bold ${generalizationMetrics.r2Score >= 0.7 ? 'text-green-400' : generalizationMetrics.r2Score >= 0.5 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                        {generalizationMetrics.r2Score?.toFixed(4)}
-                                    </p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-gray-400">RMSE</p>
-                                    <p className="text-2xl font-bold text-orange-400">{generalizationMetrics.rmse?.toFixed(2)}</p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-gray-400">MAE</p>
-                                    <p className="text-2xl font-bold text-yellow-400">{generalizationMetrics.mae?.toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                                Train: {generalizationMetrics.trainSize} samples | Test: {generalizationMetrics.testSize} samples
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Model Cards - Regression Metrics Only */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {modelResults.map((model, idx) => (
-                            <div key={idx} className={`bg-slate-700 rounded-lg p-4 border-l-4 ${model.modelType === bestModel ? 'border-green-500' : 'border-blue-500'}`}>
-                                <div className="flex justify-between items-start mb-3">
-                                    <h4 className="text-lg font-semibold text-blue-400">{model.modelType}</h4>
-                                    {model.modelType === bestModel && (
-                                        <span className="bg-green-600 text-xs px-2 py-1 rounded-full">Best</span>
-                                    )}
-                                </div>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">MAE:</span>
-                                        <span className="font-medium text-yellow-400">{model.mae?.toFixed(2) || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">RMSE:</span>
-                                        <span className="font-medium text-orange-400">{model.rmse?.toFixed(2) || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">R² Score:</span>
-                                        <span className={`font-medium ${model.r2Score > 0.7 ? 'text-green-400' : model.r2Score > 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                            {model.r2Score?.toFixed(4) || 'N/A'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-400">Training Time:</span>
-                                        <span className="font-medium">{model.trainingTime?.toFixed(2)}s</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* MAE vs RMSE Comparison */}
-                        <div>
-                            <h3 className="text-xl font-semibold mb-4">MAE vs RMSE Comparison</h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={modelResults}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                    <XAxis dataKey="modelType" stroke="#9CA3AF" angle={-15} textAnchor="end" height={80} />
-                                    <YAxis stroke="#9CA3AF" />
-                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                    <Legend />
-                                    <Bar dataKey="mae" fill="#F59E0B" name="MAE" />
-                                    <Bar dataKey="rmse" fill="#EF4444" name="RMSE" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div>
-                            <h3 className="text-xl font-semibold mb-4">Feature Importance</h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={getFeatureImportance()} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                    <XAxis type="number" stroke="#9CA3AF" />
-                                    <YAxis dataKey="feature" type="category" stroke="#9CA3AF" />
-                                    <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
-                                    <Bar dataKey="importance" fill="#8B5CF6" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
                     {/* Actual vs Predicted Scatter Plot */}
                     {predictionsSample && predictionsSample.actual && (() => {
                         const scatterData = predictionsSample.actual.map((a, i) => ({ actual: a, predicted: predictionsSample.predicted[i] }));
@@ -210,33 +115,6 @@ const ModelsTab = ({
                             </div>
                         );
                     })()}
-
-                    {/* Performance Metrics Radar - Normalized Regression Scores */}
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-4">Normalized Performance Scores</h3>
-                        <ResponsiveContainer width="100%" height={400}>
-                            <RadarChart data={(() => {
-                                // Normalize metrics to 0-100 scale (higher = better)
-                                const maxMae = Math.max(...modelResults.map(m => m.mae || 0));
-                                const maxRmse = Math.max(...modelResults.map(m => m.rmse || 0));
-                                return modelResults.slice(0, 4).map(m => ({
-                                    model: m.modelType,
-                                    'MAE Score': maxMae > 0 ? (1 - (m.mae || 0) / maxMae) * 100 : 50,
-                                    'RMSE Score': maxRmse > 0 ? (1 - (m.rmse || 0) / maxRmse) * 100 : 50,
-                                    'R² Score': Math.max(0, Math.min(100, ((m.r2Score || 0) + 1) / 2 * 100))
-                                }));
-                            })()}>
-                                <PolarGrid stroke="#374151" />
-                                <PolarAngleAxis dataKey="model" stroke="#9CA3AF" />
-                                <PolarRadiusAxis stroke="#9CA3AF" domain={[0, 100]} />
-                                <Radar name="MAE Score" dataKey="MAE Score" stroke="#F59E0B" fill="#F59E0B" fillOpacity={0.5} />
-                                <Radar name="RMSE Score" dataKey="RMSE Score" stroke="#EF4444" fill="#EF4444" fillOpacity={0.5} />
-                                <Radar name="R² Score" dataKey="R² Score" stroke="#10B981" fill="#10B981" fillOpacity={0.5} />
-                                <Legend />
-                            </RadarChart>
-                        </ResponsiveContainer>
-                        <p className="text-sm text-gray-400 text-center mt-2">Higher scores = better performance (normalized to 0-100)</p>
-                    </div>
                 </>
             )}
         </div>
