@@ -1,13 +1,11 @@
-# 🔬 MEMS Sensor ML Analysis & Predictive Maintenance System
+# MEMS Sensor ML Analysis & Predictive Maintenance System
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-cyan.svg)](https://tailwindcss.com)
 
-A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remaining Useful Life (RUL) prediction**, and **explainable AI analysis**.
-
-![Dashboard Preview](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
+A full-stack predictive maintenance platform designed to monitor MEMS sensor data, detect statistical anomalies, and predict Remaining Useful Life (RUL) using standard Machine Learning regression algorithms.
 
 ---
 
@@ -24,33 +22,23 @@ A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remain
 ## 🚀 Features
 
 ### Core Capabilities
-- **Multi-Sensor Support**: Accelerometer, Gyroscope, Pressure, Temperature sensors
-- **Real-time Visualization**: Interactive charts with Recharts
-- **ML Model Training**: Random Forest, XGBoost, SVR, Gradient Boosting
-- **Explainable AI (XAI)**: SHAP values, feature importance, decision rules
-- **Rolling Z-Score Anomaly Detection**: Configurable threshold (2.0-4.0) and window size (20-200)
-- **RUL Prediction**: Remaining Useful Life estimation with confidence intervals
+- **Sensor Monitoring**: Visualizes time-series data from Accelerometers, Gyroscopes, Pressure, and Temperature sensors.
+- **Statistical Anomaly Detection**: Uses a Rolling Z-Score algorithm with configurable threshold (2.0-4.0) and window size parameters to flag sensor anomalies in real-time.
+- **Machine Learning Regression**: Trains `scikit-learn` models (Random Forest, Gradient Boosting, SVM, and Multi-Layer Perceptron) to estimate Remaining Useful Life (RUL).
+- **Model Explainability**: Integrates SHAP (SHapley Additive exPlanations) to extract feature importance and understand exactly which sensor metrics are driving the RUL predictions.
+- **Signal Processing**: Utilizes backend `numpy.fft` for Fast Fourier Transforms (FFT) and Wavelet transforms to analyze sensor noise and drift frequencies.
 
-### Advanced Processing
-- **Fast Fourier Transform (FFT)**: Backend numpy.fft for O(N log N) performance
-- **Wavelet Transform**: Energy ratio analysis with interpretation
-- **Unified Health Report API**: Single source of truth for RUL, status, risks, forecast
+### Dashboard Architecture
+The system is divided into 5 focused modules:
+1. 📊 **Data**: Raw sensor data visualization and CSV export.
+2. 🤖 **Models**: ML model training, benchmarking, and comparison tracking.
+3. 🎯 **Prediction**: RUL forecasting based on the current sensor degradation curve.
+4. 🔍 **Explainability (XAI)**: SHAP-powered charts detailing which features impact the model most.
+5. ⚠️ **Anomaly**: Live Z-score anomaly plotting and historical lists.
 
-### Dashboard Tabs
-| Tab | Description |
-|-----|-------------|
-| 📊 **Data** | Sensor data visualization and export |
-| 🤖 **Models** | ML model training and comparison leaderboards |
-| 🎯 **Prediction** | RUL forecast with confidence bounds |
-| 🔍 **XAI** | SHAP feature importance and explanations |
-| ⚠️ **Anomaly** | Rolling Z-score detection with dynamic thresholding |
-
-### Production Features
-- **PDF Report Generation**: Professional reports with charts
-- **Email Alerts**: Gmail SMTP integration for maintenance notifications
-- **Model Download**: Export trained models as .joblib files
-- **Database Storage**: SQLite with SQLAlchemy ORM
-- **Docker Ready**: Full containerization
+### Alerts & Exporting
+- **Maintenance Alerts**: Integrated Python `smtplib` to dispatch automated Gmail SMTP alerts to maintenance teams when RUL drops below critical thresholds.
+- **PDF Reports**: Generates downloadable PDF summaries of sensor conditions using `html2canvas` and `jsPDF`.
 
 ---
 
@@ -59,37 +47,26 @@ A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remain
 ```
 mems-ml-system/
 ├── backend/                          # FastAPI Backend
-│   ├── main.py                       # API endpoints
-│   ├── requirements.txt              # Python dependencies
-│   ├── Dockerfile                    # Docker configuration
-│   ├── database/
-│   │   └── database.py               # SQLAlchemy models
-│   ├── models/
-│   │   ├── ml_models.py              # ML training & persistence
-│   │   ├── data_processor.py         # Data processing utilities
-│   │   └── xai_analyzer.py           # XAI analysis
-│   ├── data/
-│   │   └── dataset_loader.py         # NASA/CWRU dataset loaders
-│   ├── utils/
-│   │   └── health_report.py          # Unified health report builder
-│   └── saved_models/                 # Persisted ML models
+│   ├── main.py                       # Core API routing
+│   ├── requirements.txt              # Pipeline dependencies (scikit-learn, fastapi, shap)
+│   ├── database/                     # SQLite operations
+│   ├── models/                       
+│   │   ├── ml_models.py              # ML model definitions and training logic
+│   │   ├── data_processor.py         # Data preprocessing
+│   │   └── xai_analyzer.py           # SHAP analysis
+│   ├── data/                         # CSV loaders for CWRU datasets
+│   └── utils/                        # Backend utilities
 │
 ├── frontend/                         # React + Vite Frontend
 │   ├── src/
-│   │   ├── MEMSDashboard.jsx         # Main dashboard
-│   │   ├── main.jsx                  # Entry point
-│   │   ├── services/
-│   │   │   └── api.js                # API client
-│   │   ├── utils/
-│   │   │   ├── signalProcessing.js   # FFT/Wavelet
-│   │   │   └── anomalyDetection.js   # Rolling Z-score detection
-│   │   └── components/               # Reusable components
-│   ├── package.json                  # Node dependencies
-│   ├── vite.config.js                # Vite configuration
-│   └── Dockerfile                    # Docker configuration
+│   │   ├── MEMSDashboard.jsx         # Central React application
+│   │   ├── services/api.js           # Fetch requests to backend
+│   │   └── utils/                    # Frontend fallback logic
+│   ├── package.json                  
+│   ├── tailwind.config.js            
+│   └── vite.config.js                
 │
-├── docker-compose.yml                # Full-stack deployment
-└── render.yaml                       # Render deployment config
+└── docker-compose.yml                
 ```
 
 ---
@@ -99,7 +76,6 @@ mems-ml-system/
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- npm or yarn
 
 ### Backend Setup
 
@@ -114,7 +90,7 @@ source venv/bin/activate  # Linux/Mac
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the server
+# Start the local server
 python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -126,166 +102,28 @@ cd frontend
 # Install dependencies
 npm install
 
-# Start development server
+# Start React development server
 npm run dev
 ```
 
-### Local Access
-
-| Service | URL |
-|---------|-----|
-| Frontend Dashboard | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| API Documentation | http://localhost:8000/docs |
-| ReDoc | http://localhost:8000/redoc |
-
 ---
 
-## 🐳 Docker Deployment
+## 🔧 Deployment Configuration
 
-```bash
-# Build and run all services
-docker-compose up --build
-
-# Run in background
-docker-compose up -d
-
-# Stop services
-docker-compose down
-```
-
----
-
-## 📊 API Endpoints
-
-### Signal Processing
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/signal/fft` | POST | Fast Fourier Transform (numpy.fft) |
-
-### Data Generation
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/generate-data` | POST | Generate synthetic sensor data |
-| `/api/datasets/list` | GET | List available real datasets |
-
-### ML Models
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/train-models` | POST | Train ML models |
-| `/api/models/download-best` | GET | Download best model (.joblib) |
-| `/api/models/save` | POST | Save trained models |
-| `/api/models/load/{session_id}` | POST | Load saved models |
-
-### Health & XAI
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health-report` | POST | Unified health report |
-| `/api/xai-analysis` | POST | SHAP explainability |
-
-### Notifications
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/send-alert` | POST | Email alert via Gmail SMTP |
-
----
-
-## 🧪 Technology Stack
-
-### Backend
-| Technology | Purpose |
-|------------|---------|
-| FastAPI | REST API framework |
-| SQLAlchemy | Database ORM |
-| scikit-learn | Machine learning |
-| XGBoost | Gradient boosting |
-| NumPy/Pandas | Data processing |
-| SHAP | Explainable AI |
-| joblib | Model persistence |
-
-### Frontend
-| Technology | Purpose |
-|------------|---------|
-| React 18 | UI framework |
-| Vite | Build tool |
-| Tailwind CSS | Styling |
-| Recharts | Data visualization |
-| html2canvas | Chart capture |
-| jsPDF | PDF generation |
-| Lucide React | Icons |
-
----
-
-## 📈 ML Models
-
-| Model | Algorithm | Use Case |
-|-------|-----------|----------|
-| Random Forest | Ensemble trees | Robust baseline |
-| XGBoost | Gradient boosting | High accuracy |
-| SVR | Support Vector Regression | Small datasets |
-| Gradient Boosting | Sequential boosting | Complex patterns |
-
----
-
-## 🏗️ System Architecture
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                    MEMS ML System Pipeline                           │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  📊 Sensor Data → 🔧 Preprocessing → ⚙️ Feature Extraction            │
-│       │                                     │                         │
-│       ▼                                     ▼                         │
-│  🧠 ML Models ─────────────────────→ 📈 RUL Prediction               │
-│       │                                     │                         │
-│       ▼                                     ▼                         │
-│  🔍 XAI Analysis ──────────────────→ 🖥️ Dashboard/Alerts            │
-│                                             │                         │
-│                                             ▼                         │
-│                                      📄 Report Export                 │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-### Data Sources
-- **Synthetic Data**: Configurable degradation simulation
-- **NASA Bearing Dataset**: Real bearing failure data
-- **CWRU Bearing Dataset**: Classification benchmarks
-- **CSV Upload**: Custom sensor data
-
----
-
-## 🔧 Configuration
-
-### Frontend Environment (`.env`)
+### Frontend (Vercel)
+Requires one environment variable in the Vercel dashboard:
 ```bash
 VITE_API_URL=https://mems-ml-system.onrender.com
 ```
 
-### Backend Environment (Render / Local)
+### Backend (Render / Local `.env`)
+To enable the free email alert system, generate a Google App Password and provide it to the backend:
 ```bash
 GMAIL_EMAIL=your-email@gmail.com
-GMAIL_APP_PASSWORD=your-app-password
+GMAIL_APP_PASSWORD=your-16-char-app-password
 ```
 
 ---
 
-## 🚀 Deployment
-
-### Frontend → Vercel
-1. Push to GitHub
-2. Connect repository to [Vercel](https://vercel.com)
-3. Set root directory: `frontend`
-4. Add environment variable: `VITE_API_URL`
-
-### Backend → Render
-1. Connect repository to [Render](https://render.com)
-2. Use `render.yaml` for auto-configuration
-3. Add Gmail credentials for email alerts
-
----
-
 ## 📄 License
-
 This project is licensed under the MIT License.
