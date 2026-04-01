@@ -4,7 +4,6 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-cyan.svg)](https://tailwindcss.com)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)](https://tensorflow.org)
 
 A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remaining Useful Life (RUL) prediction**, and **explainable AI analysis**.
 
@@ -28,7 +27,6 @@ A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remain
 - **Multi-Sensor Support**: Accelerometer, Gyroscope, Pressure, Temperature sensors
 - **Real-time Visualization**: Interactive charts with Recharts
 - **ML Model Training**: Random Forest, XGBoost, SVR, Gradient Boosting
-- **LSTM Deep Learning**: Pre-trained neural network for time-series RUL prediction
 - **Explainable AI (XAI)**: SHAP values, feature importance, decision rules
 - **Rolling Z-Score Anomaly Detection**: Configurable threshold (2.0-4.0) and window size (20-200)
 - **RUL Prediction**: Remaining Useful Life estimation with confidence intervals
@@ -42,15 +40,10 @@ A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remain
 | Tab | Description |
 |-----|-------------|
 | 📊 **Data** | Sensor data visualization and export |
-| 📡 **Live** | Real-time streaming simulation |
-| 📈 **Analysis** | Statistical analysis and trends |
-| 🤖 **Models** | ML model training and comparison |
-| 🔍 **XAI** | SHAP feature importance and explanations |
+| 🤖 **Models** | ML model training and comparison leaderboards |
 | 🎯 **Prediction** | RUL forecast with confidence bounds |
-| ⚠️ **Anomaly** | Rolling Z-score detection with sliders |
-| 🌊 **Advanced** | FFT and Wavelet signal processing |
-| 🧠 **Deep Learning** | LSTM neural network training |
-| 🏗️ **Architecture** | System pipeline visualization |
+| 🔍 **XAI** | SHAP feature importance and explanations |
+| ⚠️ **Anomaly** | Rolling Z-score detection with dynamic thresholding |
 
 ### Production Features
 - **PDF Report Generation**: Professional reports with charts
@@ -66,7 +59,7 @@ A full-stack ML-powered platform for **MEMS sensor health monitoring**, **Remain
 ```
 mems-ml-system/
 ├── backend/                          # FastAPI Backend
-│   ├── main.py                       # API endpoints (1100+ lines)
+│   ├── main.py                       # API endpoints
 │   ├── requirements.txt              # Python dependencies
 │   ├── Dockerfile                    # Docker configuration
 │   ├── database/
@@ -79,18 +72,16 @@ mems-ml-system/
 │   │   └── dataset_loader.py         # NASA/CWRU dataset loaders
 │   ├── utils/
 │   │   └── health_report.py          # Unified health report builder
-│   └── saved_models/                 # Persisted ML models & LSTM
-│       ├── lstm_rul_predictor.keras  # Pre-trained LSTM model
-│       └── training_history.json     # LSTM training metrics
+│   └── saved_models/                 # Persisted ML models
 │
 ├── frontend/                         # React + Vite Frontend
 │   ├── src/
-│   │   ├── MEMSDashboard.jsx         # Main dashboard (3100+ lines)
+│   │   ├── MEMSDashboard.jsx         # Main dashboard
 │   │   ├── main.jsx                  # Entry point
 │   │   ├── services/
 │   │   │   └── api.js                # API client
 │   │   ├── utils/
-│   │   │   ├── signalProcessing.js   # FFT/Wavelet (fallback)
+│   │   │   ├── signalProcessing.js   # FFT/Wavelet
 │   │   │   └── anomalyDetection.js   # Rolling Z-score detection
 │   │   └── components/               # Reusable components
 │   ├── package.json                  # Node dependencies
@@ -186,13 +177,6 @@ docker-compose down
 | `/api/models/save` | POST | Save trained models |
 | `/api/models/load/{session_id}` | POST | Load saved models |
 
-### Deep Learning
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/lstm/status` | GET | LSTM model status |
-| `/api/lstm/train` | POST | Train LSTM model |
-| `/api/lstm/predict` | POST | LSTM RUL prediction |
-
 ### Health & XAI
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -215,7 +199,6 @@ docker-compose down
 | SQLAlchemy | Database ORM |
 | scikit-learn | Machine learning |
 | XGBoost | Gradient boosting |
-| TensorFlow/Keras | LSTM deep learning |
 | NumPy/Pandas | Data processing |
 | SHAP | Explainable AI |
 | joblib | Model persistence |
@@ -241,7 +224,6 @@ docker-compose down
 | XGBoost | Gradient boosting | High accuracy |
 | SVR | Support Vector Regression | Small datasets |
 | Gradient Boosting | Sequential boosting | Complex patterns |
-| LSTM | Neural network | Time-series RUL |
 
 ---
 
@@ -255,7 +237,7 @@ docker-compose down
 │  📊 Sensor Data → 🔧 Preprocessing → ⚙️ Feature Extraction            │
 │       │                                     │                         │
 │       ▼                                     ▼                         │
-│  🧠 ML/DL Models ──────────────────→ 📈 RUL Prediction               │
+│  🧠 ML Models ─────────────────────→ 📈 RUL Prediction               │
 │       │                                     │                         │
 │       ▼                                     ▼                         │
 │  🔍 XAI Analysis ──────────────────→ 🖥️ Dashboard/Alerts            │
@@ -281,7 +263,7 @@ docker-compose down
 VITE_API_URL=https://mems-ml-system.onrender.com
 ```
 
-### Backend Environment (Render)
+### Backend Environment (Render / Local)
 ```bash
 GMAIL_EMAIL=your-email@gmail.com
 GMAIL_APP_PASSWORD=your-app-password
@@ -307,12 +289,3 @@ GMAIL_APP_PASSWORD=your-app-password
 ## 📄 License
 
 This project is licensed under the MIT License.
-
----
-
-## 🙏 Acknowledgments
-
-- NASA Prognostics Center for bearing dataset
-- Case Western Reserve University (CWRU) Bearing Dataset
-- scikit-learn, TensorFlow, and FastAPI communities
-- React, Recharts, and Tailwind CSS teams

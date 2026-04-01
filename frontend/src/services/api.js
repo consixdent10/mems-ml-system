@@ -85,23 +85,6 @@ export const api = {
         return response.json();
     },
 
-    // LSTM Status
-    getLstmStatus: async () => {
-        const response = await fetch(`${API_BASE_URL}/api/lstm-status`);
-        if (!response.ok) throw new Error('Failed to get LSTM status');
-        return response.json();
-    },
-
-    // LSTM Predict
-    lstmPredict: async (features) => {
-        const response = await fetch(`${API_BASE_URL}/api/lstm-predict`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ features })
-        });
-        if (!response.ok) throw new Error('Failed to get LSTM prediction');
-        return response.json();
-    },
 
     // Download Best Model
     downloadBestModel: async () => {
