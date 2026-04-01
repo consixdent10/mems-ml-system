@@ -12,6 +12,11 @@ import sys
 import os
 import uuid
 import smtplib
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
