@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 
 /**
- * Models Tab Component
+ * Models Tab Component v2.1 - Regression Only — v2.1 (Regression Only)
  * Displays ML model training interface, leaderboard with accuracy,
  * and actual vs predicted scatter chart
  */
