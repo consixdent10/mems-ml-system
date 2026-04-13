@@ -359,6 +359,9 @@ const MEMSDashboard = () => {
     const [predictionsSample, setPredictionsSample] = useState(null);
     const [activeTab, setActiveTab] = useState('data');
     const [isTraining, setIsTraining] = useState(false);
+    const [isTrainingClassifier, setIsTrainingClassifier] = useState(false);
+    const [classifierResults, setClassifierResults] = useState(null);
+    const [classifierError, setClassifierError] = useState('');
     const [rul, setRul] = useState(null);
     const [anomalies, setAnomalies] = useState([]);
     const [sensorCharacteristics, setSensorCharacteristics] = useState(null);
@@ -561,6 +564,23 @@ const MEMSDashboard = () => {
             showToast(errorMsg, 'error');
         } finally {
             setIsTraining(false);
+        }
+    };
+
+    const trainClassifier = async () => {
+        setIsTrainingClassifier(true);
+        setClassifierError('');
+        try {
+            const response = await api.trainClassifier();
+            setClassifierResults(response);
+            showToast('Fault classifier trained successfully!', 'success');
+        } catch (error) {
+            console.error('Error training classifier:', error);
+            const errorMsg = error.message || 'Train Classifier failed';
+            setClassifierError(errorMsg);
+            showToast(errorMsg, 'error');
+        } finally {
+            setIsTrainingClassifier(false);
         }
     };
 

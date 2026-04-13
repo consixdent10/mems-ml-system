@@ -23,7 +23,7 @@ from email.mime.multipart import MIMEMultipart
 # Add models directory to path
 sys.path.append(os.path.dirname(__file__))
 
-from models.ml_models import MLModelTrainer
+from models.ml_models import MLModelTrainer, FaultClassifier
 from models.data_processor import DataProcessor
 from models.xai_analyzer import XAIAnalyzer
 from database.database import init_database, get_db, DatabaseOperations
@@ -57,7 +57,11 @@ tags_metadata = [
     },
     {
         "name": "Real Datasets",
-        "description": "Load real-world CWRU Bearing Dataset from Case Western Reserve University",
+        "description": "Load real-world datasets from CWRU, ADI MEMS (Analog Devices), and NASA IMS",
+    },
+    {
+        "name": "Fault Classification",
+        "description": "Train and use fault classifiers on multi-dataset vibration data (CWRU + ADI + NASA)",
     },
     {
         "name": "History",
@@ -121,6 +125,7 @@ app.add_middleware(
 ml_trainer = MLModelTrainer()
 data_processor = DataProcessor()
 xai_analyzer = XAIAnalyzer()
+fault_classifier = FaultClassifier()
 
 # Initialize database and auto-load/train models on startup
 @app.on_event("startup")
@@ -857,6 +862,63 @@ async def load_real_dataset(request: LoadDatasetRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ============== Fault Classification Endpoints ==============
+
+@app.post("/api/classifier/train", tags=["Fault Classification"])
+async def train_fault_classifier():
+    """
+    Train fault classifiers on ALL available real-world datasets.
+    
+    Uses data from:
+    - CWRU Bearing Dataset (Case Western Reserve University)
+    - ADI CbM MEMS Dataset (Analog Devices ADXL356)
+    - NASA IMS Bearing Dataset (NASA Prognostics Repository)
+    
+    Trains 4 classifiers: Random Forest, Gradient Boosting, SVM, Neural Network.
+    Returns accuracy, precision, recall, F1-score, and confusion matrix.
+    """
+    try:
+        results = fault_classifier.train()
+        return {
+            "status": "success",
+            "message": f"Trained {len(results['classifiers'])} classifiers on multi-dataset data",
+            **results
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ClassifyRequest(BaseModel):
+    values: List[float]  # Vibration signal values
+
+
+@app.post("/api/classifier/predict", tags=["Fault Classification"])
+async def classify_fault(request: ClassifyRequest):
+    """
+    Classify bearing fault type from vibration signal data.
+    
+    Send an array of vibration values, returns the predicted fault type
+    and confidence score.
+    """
+    try:
+        if not fault_classifier.trained:
+            raise HTTPException(
+                status_code=400,
+                detail="Classifier not trained. Call POST /api/classifier/train first."
+            )
+        
+        signal_data = np.array(request.values)
+        result = fault_classifier.predict(signal_data)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============== History Endpoints ==============

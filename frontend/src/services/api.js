@@ -130,6 +130,16 @@ export const api = {
         });
         if (!response.ok) throw new Error('Failed to compute FFT');
         return response.json();
+    },
+
+    // Fault Classification - Train classifiers on all datasets
+    trainClassifier: async () => {
+        const response = await fetch(`${API_BASE_URL}/api/classifier/train`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error('Failed to train classifier');
+        return response.json();
     }
 };
 
