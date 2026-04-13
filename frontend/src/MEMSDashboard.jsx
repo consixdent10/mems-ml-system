@@ -1549,10 +1549,6 @@ const MEMSDashboard = () => {
                             trainModels={trainModels}
                             trainError={trainError}
                             onDownloadModel={downloadBestModel}
-                            classifierResults={classifierResults}
-                            isTrainingClassifier={isTrainingClassifier}
-                            trainClassifier={trainClassifier}
-                            classifierError={classifierError}
                         />
                     )}
 
