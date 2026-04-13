@@ -121,11 +121,12 @@ class MLModelTrainer:
         n = len(values)
         
         # --- Extract windowed features ---
-        window_size = min(200, n // 10)
+        # Smaller windows = more samples for robust accuracy measurement
+        window_size = min(50, n // 10)
         if window_size < 20:
             window_size = 20
         
-        step = max(1, window_size // 8)  # 87.5% overlap for more training data
+        step = max(1, window_size // 6)  # ~83% overlap → ~325 windows from 2000 rows
         
         feature_rows = []
         for start in range(0, n - window_size, step):
