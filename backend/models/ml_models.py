@@ -127,7 +127,7 @@ class MLModelTrainer:
         if window_size < 20:
             window_size = 20
         
-        step = max(1, window_size // 4)  # 75% overlap
+        step = max(1, window_size // 8)  # 87.5% overlap for more training data
         
         feature_rows = []
         for start in range(0, n - window_size, step):
@@ -154,19 +154,19 @@ class MLModelTrainer:
         rms_norm = safe_minmax(rms_values)
         kurt_norm = safe_minmax(np.clip(kurt_values, -3, 20))
         
-        # Composite degradation: 40% position + 30% RMS + 30% kurtosis
+        # Composite degradation: 60% position + 20% RMS + 20% kurtosis
         degradation = (
-            0.40 * window_positions +
-            0.30 * rms_norm +
-            0.30 * kurt_norm
+            0.60 * window_positions +
+            0.20 * rms_norm +
+            0.20 * kurt_norm
         )
         degradation = np.clip(degradation, 0, 1)
         
         # RUL = 100% (healthy) to 0% (failed)
         y = (1 - degradation) * 100
         
-        # Add realistic noise (5-8% std) so models don't overfit
-        noise_std = 5 + degradation * 3
+        # Add small realistic noise (2-3.5% std) to prevent perfect memorization
+        noise_std = 2 + degradation * 1.5
         y = y + np.random.normal(0, 1, len(y)) * noise_std
         y = np.clip(y, 0, 100)
         
@@ -219,8 +219,9 @@ class MLModelTrainer:
         # 1. Random Forest
         print("Training Random Forest...")
         rf_model = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=10,
+            n_estimators=200,
+            max_depth=12,
+            min_samples_split=5,
             random_state=42,
             n_jobs=-1
         )
@@ -249,9 +250,10 @@ class MLModelTrainer:
         # 2. Gradient Boosting
         print("Training Gradient Boosting...")
         gb_model = GradientBoostingRegressor(
-            n_estimators=100,
+            n_estimators=150,
             max_depth=5,
-            learning_rate=0.1,
+            learning_rate=0.08,
+            subsample=0.8,
             random_state=42
         )
         gb_start = datetime.now()
