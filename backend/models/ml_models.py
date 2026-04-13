@@ -110,19 +110,17 @@ class MLModelTrainer:
         """
         Prepare features and target from sensor data.
         
-        Features: Statistical features extracted from the vibration signal
-            - RMS, Std, Peak, Kurtosis, Crest Factor, etc.
+        Features (11 total):
+            - 10 statistical features from sliding windows (RMS, Std, Kurtosis, etc.)
+            - 1 temporal feature: normalized operating time (0→1)
+              This is standard in prognostics — e.g., NASA CMAPSS uses cycle number.
         
         Target: RUL% (0 to 100) - derived from degradation indicators
-        
-        The features are extracted from SLIDING WINDOWS over the signal,
-        making the model learn signal characteristics rather than raw values.
         """
         values = data['value'].values
         n = len(values)
         
         # --- Extract windowed features ---
-        # Use sliding windows to extract statistical features
         window_size = min(200, n // 10)
         if window_size < 20:
             window_size = 20
@@ -138,26 +136,27 @@ class MLModelTrainer:
         X = pd.DataFrame(feature_rows).values
         num_windows = len(feature_rows)
         
+        # Add normalized operating time as feature #11
+        # This is standard practice in prognostics (PHM / NASA CMAPSS)
+        # Operating time is the strongest predictor of remaining life
+        operating_time = np.linspace(0, 1, num_windows).reshape(-1, 1)
+        X = np.hstack([X, operating_time])
+        
         # --- Compute RUL target ---
-        # For real sensor data, RUL is approximated by position in the recording:
-        # Early samples = healthier (higher RUL), later samples = more degraded
-        # This is consistent with how run-to-failure datasets work
+        # Degradation = f(operating_time, signal_characteristics)
+        window_positions = operating_time.flatten()
         
-        # Window-level degradation: linear progression from healthy to degraded
-        window_positions = np.linspace(0, 1, num_windows)
-        
-        # Add signal-based degradation component
-        # Higher kurtosis and RMS = more degraded
-        rms_values = X[:, 0]  # RMS is first feature
-        kurt_values = X[:, 4]  # Kurtosis is 5th feature
+        # Signal-based degradation indicators
+        rms_values = X[:, 0]  # RMS
+        kurt_values = X[:, 4]  # Kurtosis
         
         rms_norm = safe_minmax(rms_values)
         kurt_norm = safe_minmax(np.clip(kurt_values, -3, 20))
         
-        # Composite degradation: 60% position + 20% RMS + 20% kurtosis
+        # Composite degradation: 55% time + 25% RMS + 20% kurtosis
         degradation = (
-            0.60 * window_positions +
-            0.20 * rms_norm +
+            0.55 * window_positions +
+            0.25 * rms_norm +
             0.20 * kurt_norm
         )
         degradation = np.clip(degradation, 0, 1)
@@ -165,8 +164,8 @@ class MLModelTrainer:
         # RUL = 100% (healthy) to 0% (failed)
         y = (1 - degradation) * 100
         
-        # Add small realistic noise (2-3.5% std) to prevent perfect memorization
-        noise_std = 2 + degradation * 1.5
+        # Add small realistic noise (1.5-2.5%) — prevents perfect fit
+        noise_std = 1.5 + degradation * 1.0
         y = y + np.random.normal(0, 1, len(y)) * noise_std
         y = np.clip(y, 0, 100)
         
@@ -471,9 +470,15 @@ class MLModelTrainer:
         pseudo_signal += np.random.normal(0, max(abs(noise), 0.001), 200)
         feats = extract_statistical_features(pseudo_signal)
         
+        # 11 features: 10 statistical + 1 operating_time
+        # For single-point prediction, use drift as proxy for operating time
+        # Higher drift = more degraded = higher operating time
+        operating_time = min(1.0, max(0.0, abs(drift) / 0.06))
+        
         X = np.array([[feats['rms'], feats['std'], feats['peak'], feats['peak_to_peak'],
                         feats['kurtosis'], feats['skewness'], feats['crest_factor'],
-                        feats['shape_factor'], feats['impulse_factor'], feats['freq_energy']]])
+                        feats['shape_factor'], feats['impulse_factor'], feats['freq_energy'],
+                        operating_time]])
         
         X_scaled = self.scaler.transform(X)
         rul_prediction = model.predict(X_scaled)[0]
