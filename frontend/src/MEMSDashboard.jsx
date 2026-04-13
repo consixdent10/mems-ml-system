@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, ScatterChart, Scatter, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, Cell, ReferenceLine } from 'recharts';
 import { Activity, TrendingUp, AlertTriangle, Database, Brain, Download, Mail, FileText, Zap, Waves } from 'lucide-react';
 import { jsPDF } from 'jspdf';
@@ -9,11 +9,7 @@ import { performFFT, waveletTransform } from './utils/signalProcessing';
 import { detectAnomalies } from './utils/anomalyDetection';
 import ModelsTab from './components/tabs/ModelsTab';
 
-// Note: api, performFFT, waveletTransform, detectAnomalies are now imported from modules
 
-// NOTE: Legacy ML code removed - all training uses backend API (api.trainModels)
-
-// Advanced Feature Extraction
 const extractFeatures = (data) => {
     const values = data.map(d => parseFloat(d.value));
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
@@ -377,14 +373,8 @@ const MEMSDashboard = () => {
     const [comparisonMode, setComparisonMode] = useState(false);
     const [secondSensorData, setSecondSensorData] = useState([]);
 
-    // Real Dataset State
-    const [dataSource, setDataSource] = useState('synthetic'); // 'synthetic' or 'real'
-    const [selectedDataset, setSelectedDataset] = useState('nasa_bearing');
-    const [datasetOptions, setDatasetOptions] = useState({
-        degradation_stage: 0,
-        fault_type: 'normal',
-        scenario: 'normal'
-    });
+    // Real Dataset State (CWRU Bearing Data from Case Western Reserve University)
+    const [selectedDataset, setSelectedDataset] = useState('cwru_normal');
     const [datasetInfo, setDatasetInfo] = useState(null);
 
     // Data Upload State
@@ -431,7 +421,7 @@ const MEMSDashboard = () => {
 
     useEffect(() => {
         generateData();
-    }, [sensorType, degradation]);
+    }, [selectedDataset]);
 
     const generateData = async () => {
         setIsLoadingData(true);
@@ -440,15 +430,9 @@ const MEMSDashboard = () => {
         try {
             let response;
 
-            if (dataSource === 'real') {
-                // Load real dataset from API
-                response = await api.loadDataset(selectedDataset, datasetOptions);
-                setDatasetInfo(response.dataset_info || null);
-            } else {
-                // Generate synthetic data
-                response = await api.generateData(sensorType, degradation);
-                setDatasetInfo(null);
-            }
+            // Always load real CWRU dataset
+            response = await api.loadDataset(selectedDataset);
+            setDatasetInfo(response.dataset_info || null);
 
             // Set data from API response
             setSensorData(response.data);
@@ -512,7 +496,7 @@ const MEMSDashboard = () => {
 
             // Fetch unified health report from backend
             try {
-                const reportResponse = await api.healthReport(response.data, degradation);
+                const reportResponse = await api.healthReport(response.data, null);
                 if (reportResponse?.health_report) {
                     setHealthReport(reportResponse.health_report);
                 }
@@ -1268,105 +1252,44 @@ const MEMSDashboard = () => {
 
                 {/* Controls */}
                 <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-xl">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        {/* Data Source Toggle */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* Dataset Selector - CWRU Bearing (Real Data) */}
                         <div>
-                            <label className="block text-sm font-medium mb-2">Data Source</label>
+                            <label className="block text-sm font-medium mb-2">Dataset <span className="text-green-400 text-xs">(Real Data)</span></label>
                             <select
-                                value={dataSource}
-                                onChange={(e) => setDataSource(e.target.value)}
+                                value={selectedDataset}
+                                onChange={(e) => setSelectedDataset(e.target.value)}
                                 disabled={isUsingUploadedData}
-                                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
                             >
-                                <option value="synthetic">Synthetic Data</option>
-                                <option value="real">Real Dataset</option>
+                                <optgroup label="CWRU Bearing (Case Western Reserve Univ.)">
+                                    <option value="cwru_normal">CWRU Normal (Healthy)</option>
+                                    <option value="cwru_inner_race">CWRU Inner Race Fault</option>
+                                    <option value="cwru_outer_race">CWRU Outer Race Fault</option>
+                                    <option value="cwru_ball">CWRU Ball Fault</option>
+                                </optgroup>
+                                <optgroup label="ADI MEMS (Analog Devices ADXL356)">
+                                    <option value="adi_normal">ADI MEMS Normal (Healthy)</option>
+                                    <option value="adi_inner_race">ADI MEMS Inner Race Fault</option>
+                                    <option value="adi_outer_race">ADI MEMS Outer Race Fault</option>
+                                    <option value="adi_ball_fault">ADI MEMS Ball Fault</option>
+                                </optgroup>
+                                <optgroup label="NASA IMS Bearing (Run-to-Failure)">
+                                    <option value="nasa_healthy">NASA IMS Healthy (Day 1)</option>
+                                    <option value="nasa_degrading">NASA IMS Degrading (Day 3)</option>
+                                    <option value="nasa_failure">NASA IMS Near-Failure (Day 7)</option>
+                                </optgroup>
                             </select>
                         </div>
 
-                        {/* Sensor Type / Dataset Selector */}
+                        {/* Dataset Source Info - Dynamic */}
                         <div>
-                            <label className="block text-sm font-medium mb-2">
-                                {dataSource === 'real' ? 'Dataset' : 'Sensor Type'}
-                            </label>
-                            {dataSource === 'synthetic' ? (
-                                <select
-                                    value={sensorType}
-                                    onChange={(e) => setSensorType(e.target.value)}
-                                    disabled={isUsingUploadedData}
-                                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                                >
-                                    <option value="accelerometer">Accelerometer</option>
-                                    <option value="gyroscope">Gyroscope</option>
-                                    <option value="pressure">Pressure Sensor</option>
-                                    <option value="temperature">Temperature Sensor</option>
-                                </select>
-                            ) : (
-                                <select
-                                    value={selectedDataset}
-                                    onChange={(e) => setSelectedDataset(e.target.value)}
-                                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                >
-                                    <option value="nasa_bearing">NASA IMS Bearing</option>
-                                    <option value="cwru_bearing">CWRU Bearing</option>
-                                    <option value="mems_vibration">MEMS Vibration</option>
-                                </select>
-                            )}
-                        </div>
-
-                        {/* Degradation / Fault Options */}
-                        <div>
-                            <label className="block text-sm font-medium mb-2">
-                                {dataSource === 'real'
-                                    ? (selectedDataset === 'nasa_bearing' ? 'Degradation Stage'
-                                        : selectedDataset === 'cwru_bearing' ? 'Fault Type'
-                                            : 'Scenario')
-                                    : `Degradation: ${degradation}%`}
-                            </label>
-                            {dataSource === 'synthetic' ? (
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={degradation}
-                                    onChange={(e) => setDegradation(parseInt(e.target.value))}
-                                    disabled={isUsingUploadedData}
-                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer mt-3"
-                                />
-                            ) : selectedDataset === 'nasa_bearing' ? (
-                                <select
-                                    value={datasetOptions.degradation_stage}
-                                    onChange={(e) => setDatasetOptions({ ...datasetOptions, degradation_stage: parseInt(e.target.value) })}
-                                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2"
-                                >
-                                    <option value={0}>Healthy (Stage 0)</option>
-                                    <option value={1}>Early Wear (Stage 1)</option>
-                                    <option value={2}>Moderate (Stage 2)</option>
-                                    <option value={3}>Severe (Stage 3)</option>
-                                    <option value={4}>Failure (Stage 4)</option>
-                                </select>
-                            ) : selectedDataset === 'cwru_bearing' ? (
-                                <select
-                                    value={datasetOptions.fault_type}
-                                    onChange={(e) => setDatasetOptions({ ...datasetOptions, fault_type: e.target.value })}
-                                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2"
-                                >
-                                    <option value="normal">Normal (Healthy)</option>
-                                    <option value="inner_race">Inner Race Fault</option>
-                                    <option value="outer_race">Outer Race Fault</option>
-                                    <option value="ball">Ball Fault</option>
-                                </select>
-                            ) : (
-                                <select
-                                    value={datasetOptions.scenario}
-                                    onChange={(e) => setDatasetOptions({ ...datasetOptions, scenario: e.target.value })}
-                                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2"
-                                >
-                                    <option value="normal">Normal</option>
-                                    <option value="high_vibration">High Vibration</option>
-                                    <option value="shock_event">Shock Events</option>
-                                    <option value="drift">Sensor Drift</option>
-                                </select>
-                            )}
+                            <label className="block text-sm font-medium mb-2">Source</label>
+                            <div className="bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-sm text-slate-300">
+                                {selectedDataset.startsWith('cwru') ? 'Case Western Reserve University' :
+                                 selectedDataset.startsWith('adi') ? 'Analog Devices Inc. (ADXL356)' :
+                                 'NASA Prognostics Data Repository'}
+                            </div>
                         </div>
 
                         <div className="flex items-end gap-2">
@@ -1383,7 +1306,7 @@ const MEMSDashboard = () => {
                                 ) : (
                                     <>
                                         <Database className="mr-2" size={18} />
-                                        Generate
+                                        Load Data
                                     </>
                                 )}
                             </button>

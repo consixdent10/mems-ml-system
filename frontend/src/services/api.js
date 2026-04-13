@@ -70,15 +70,12 @@ export const api = {
         return response.json();
     },
 
-    loadDataset: async (datasetId, options = {}) => {
+    loadDataset: async (datasetId) => {
         const response = await fetch(`${API_BASE_URL}/api/datasets/load`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                dataset_id: datasetId,
-                degradation_stage: options.degradation_stage || 0,
-                fault_type: options.fault_type || 'normal',
-                scenario: options.scenario || 'normal'
+                dataset_id: datasetId
             })
         });
         if (!response.ok) throw new Error('Failed to load dataset');

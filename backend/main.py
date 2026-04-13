@@ -57,7 +57,7 @@ tags_metadata = [
     },
     {
         "name": "Real Datasets",
-        "description": "Load real-world datasets: NASA IMS Bearing, CWRU, MEMS Vibration",
+        "description": "Load real-world CWRU Bearing Dataset from Case Western Reserve University",
     },
     {
         "name": "History",
@@ -786,33 +786,24 @@ async def list_available_datasets():
 
 
 class LoadDatasetRequest(BaseModel):
-    dataset_id: str
-    degradation_stage: Optional[int] = 0
-    fault_type: Optional[str] = 'normal'
-    scenario: Optional[str] = 'normal'
+    dataset_id: str  # 'cwru_normal', 'cwru_inner_race', 'cwru_outer_race', 'cwru_ball'
 
 
 @app.post("/api/datasets/load", tags=["Real Datasets"])
 async def load_real_dataset(request: LoadDatasetRequest):
     """
-    Load a real-world dataset for analysis.
+    Load a real-world CWRU bearing dataset for analysis.
     
-    Available datasets:
-    - **nasa_bearing**: NASA IMS Bearing run-to-failure data (degradation_stage: 0-4)
-    - **cwru_bearing**: CWRU motor bearing fault data (fault_type: normal, inner_race, outer_race, ball)
-    - **mems_vibration**: MEMS accelerometer data (scenario: normal, high_vibration, shock_event, drift)
+    Available datasets (all REAL data from Case Western Reserve University):
+    - **cwru_normal**: Healthy bearing baseline
+    - **cwru_inner_race**: Inner race fault (0.007" diameter)
+    - **cwru_outer_race**: Outer race fault (0.007" diameter)
+    - **cwru_ball**: Ball fault (0.007" diameter)
+    
+    Source: https://engineering.case.edu/bearingdatacenter
     """
     try:
-        # Prepare kwargs based on dataset type
-        kwargs = {}
-        if request.dataset_id == 'nasa_bearing':
-            kwargs['degradation_stage'] = request.degradation_stage
-        elif request.dataset_id == 'cwru_bearing':
-            kwargs['fault_type'] = request.fault_type
-        elif request.dataset_id == 'mems_vibration':
-            kwargs['scenario'] = request.scenario
-        
-        data, info = dataset_loader.load_dataset(request.dataset_id, **kwargs)
+        data, info = dataset_loader.load_dataset(request.dataset_id)
         
         # Extract features for the loaded data
         features = data_processor.extract_features(data)
@@ -820,11 +811,8 @@ async def load_real_dataset(request: LoadDatasetRequest):
         # Detect anomalies
         anomalies = data_processor.detect_anomalies(data)
         
-        # Calculate RUL based on degradation
-        if request.dataset_id == 'nasa_bearing':
-            rul = max(0, 100 - request.degradation_stage * 25)
-        else:
-            rul = data_processor.calculate_rul(data)
+        # Calculate RUL from actual sensor characteristics
+        rul = data_processor.calculate_rul(data)
         
         # Extract sensor characteristics
         sensor_characteristics = data_processor.extract_sensor_characteristics(
@@ -841,21 +829,31 @@ async def load_real_dataset(request: LoadDatasetRequest):
                 "name": info.name,
                 "description": info.description,
                 "source": info.source,
+                "source_url": info.source_url,
                 "sampling_rate": info.sampling_rate,
-                "sensor_type": info.sensor_type
+                "sensor_type": info.sensor_type,
+                "fault_type": info.fault_type,
+                "fault_size": info.fault_size,
+                "motor_rpm": info.motor_rpm,
+                "bearing_model": info.bearing_model
             },
             "metadata": {
                 "dataset_id": request.dataset_id,
                 "num_samples": len(data),
-                "loaded_at": datetime.now().isoformat()
+                "loaded_at": datetime.now().isoformat(),
+                "data_source": "REAL - Case Western Reserve University Bearing Data Center",
+                "download_url": "https://engineering.case.edu/bearingdatacenter/download-data-file"
             }
         }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ============== History Endpoints ==============
