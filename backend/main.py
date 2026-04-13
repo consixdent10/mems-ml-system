@@ -786,21 +786,24 @@ async def list_available_datasets():
 
 
 class LoadDatasetRequest(BaseModel):
-    dataset_id: str  # 'cwru_normal', 'cwru_inner_race', 'cwru_outer_race', 'cwru_ball'
+    dataset_id: str  # e.g. 'cwru_normal', 'adi_inner_race', 'nasa_healthy'
 
 
 @app.post("/api/datasets/load", tags=["Real Datasets"])
 async def load_real_dataset(request: LoadDatasetRequest):
     """
-    Load a real-world CWRU bearing dataset for analysis.
+    Load a real-world sensor dataset for analysis.
     
-    Available datasets (all REAL data from Case Western Reserve University):
-    - **cwru_normal**: Healthy bearing baseline
-    - **cwru_inner_race**: Inner race fault (0.007" diameter)
-    - **cwru_outer_race**: Outer race fault (0.007" diameter)
-    - **cwru_ball**: Ball fault (0.007" diameter)
+    Available datasets (11 total from 3 verified sources):
     
-    Source: https://engineering.case.edu/bearingdatacenter
+    CWRU Bearing (Case Western Reserve University):
+    - cwru_normal, cwru_inner_race, cwru_outer_race, cwru_ball
+    
+    ADI MEMS (Analog Devices ADXL356 Accelerometer):
+    - adi_normal, adi_inner_race, adi_outer_race, adi_ball_fault
+    
+    NASA IMS Bearing (Run-to-Failure):
+    - nasa_healthy, nasa_degrading, nasa_failure
     """
     try:
         data, info = dataset_loader.load_dataset(request.dataset_id)
@@ -841,8 +844,8 @@ async def load_real_dataset(request: LoadDatasetRequest):
                 "dataset_id": request.dataset_id,
                 "num_samples": len(data),
                 "loaded_at": datetime.now().isoformat(),
-                "data_source": "REAL - Case Western Reserve University Bearing Data Center",
-                "download_url": "https://engineering.case.edu/bearingdatacenter/download-data-file"
+                "data_source": f"REAL - {info.source}",
+                "download_url": info.source_url
             }
         }
     except FileNotFoundError as e:
