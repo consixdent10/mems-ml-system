@@ -1941,7 +1941,7 @@ const MEMSDashboard = () => {
                                     <ResponsiveContainer width="100%" height={300}>
                                         <AreaChart data={(() => {
                                             // Start from actual RUL and decay based on degradation
-                                            const startRul = parseFloat(rul) || (100 - degradation);
+                                            const startRul = healthReport?.rul_percent || parseFloat(rul) || (100 - degradation);
                                             const dailyDecline = 0.2 + (degradation / 100) * 0.8; // 0.2%-1% per day
 
                                             return Array.from({ length: 21 }, (_, i) => {
