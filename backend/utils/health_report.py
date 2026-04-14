@@ -44,13 +44,20 @@ def build_health_report(sensor_data=None, degradation_level=None):
     # Extract features from sensor data
     if sensor_data is not None and len(sensor_data) > 0:
         mean_value = float(np.mean(sensor_data['value'].values))
-        mean_temp = float(np.mean(sensor_data['temperature'].values))
-        mean_drift = float(np.mean(sensor_data['drift'].values))
-        mean_noise = float(np.mean(sensor_data['noise'].values))
+        # Handle real datasets that may not have temperature/drift/noise columns
+        mean_temp = float(np.mean(sensor_data['temperature'].values)) if 'temperature' in sensor_data.columns else 25.0
+        mean_drift = float(np.mean(sensor_data['drift'].values)) if 'drift' in sensor_data.columns else 0.002
+        mean_noise = float(np.mean(sensor_data['noise'].values)) if 'noise' in sensor_data.columns else abs(float(np.std(sensor_data['value'].values)))
         
         # Calculate SNR
         signal_power = np.var(sensor_data['value'].values)
-        noise_power = np.var(sensor_data['noise'].values) + 0.0001
+        if 'noise' in sensor_data.columns:
+            noise_power = np.var(sensor_data['noise'].values) + 0.0001
+        else:
+            # For real datasets: estimate noise as high-frequency component
+            values = sensor_data['value'].values
+            smoothed = np.convolve(values, np.ones(10)/10, mode='same')
+            noise_power = np.var(values - smoothed) + 0.0001
         snr = float(10 * np.log10(signal_power / noise_power))
         
         # Compute RUL from sensor data
