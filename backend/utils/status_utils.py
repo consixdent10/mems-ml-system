@@ -35,16 +35,18 @@ def get_status_from_features(snr: float, drift: float, noise: float,
         'rul_percent': round(rul_percent, 2)
     }
     
-    # Check CRITICAL conditions first (any one triggers)
+    # Check CRITICAL conditions
+    # RUL < 30% is the primary CRITICAL trigger
+    # Secondary indicators (SNR/drift/noise) only trigger CRITICAL
+    # if RUL is already in warning range (<70%)
     critical_reasons = []
-    if snr <= 10:
-        critical_reasons.append(f"SNR={snr:.1f} (≤10)")
-    if drift >= 0.05:
-        critical_reasons.append(f"Drift={drift:.4f} (≥0.05)")
-    if noise >= 0.12:
-        critical_reasons.append(f"Noise={noise:.4f} (≥0.12)")
     if rul_percent < 30:
         critical_reasons.append(f"RUL={rul_percent:.1f}% (<30%)")
+    if rul_percent < 70:  # Only check secondary if RUL is concerning
+        if drift >= 0.05:
+            critical_reasons.append(f"Drift={drift:.4f} (>=0.05)")
+        if noise >= 0.12:
+            critical_reasons.append(f"Noise={noise:.4f} (>=0.12)")
     
     if critical_reasons:
         return {
