@@ -45,7 +45,7 @@ def build_health_report(sensor_data=None, degradation_level=None):
     if sensor_data is not None and len(sensor_data) > 0:
         mean_value = float(np.mean(sensor_data['value'].values))
         # Handle real datasets that may not have temperature/drift/noise columns
-        mean_temp = float(np.mean(sensor_data['temperature'].values)) if 'temperature' in sensor_data.columns else 25.0
+        mean_temp = 25.0  # Default room temp; vibration datasets don't have real temperature sensors
         mean_drift = float(np.mean(sensor_data['drift'].values)) if 'drift' in sensor_data.columns else 0.002
         mean_noise = float(np.mean(sensor_data['noise'].values)) if 'noise' in sensor_data.columns else abs(float(np.std(sensor_data['value'].values)))
         
