@@ -20,7 +20,7 @@ from utils.rul_utils import (
 from utils.status_utils import get_status_from_features
 
 
-def build_health_report(sensor_data=None, degradation_level=None):
+def build_health_report(sensor_data=None, degradation_level=None, ml_rul=None):
     """
     Build a complete unified health report.
     
@@ -83,6 +83,10 @@ def build_health_report(sensor_data=None, degradation_level=None):
         mean_value = 9.81
         snr = 30.0
     
+    # Override with ML RUL if provided
+    if ml_rul is not None:
+        rul_percent = ml_rul
+        
     # Ensure RUL is clamped
     rul_percent = clamp(rul_percent, 0, 100)
     

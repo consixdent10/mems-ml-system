@@ -318,25 +318,15 @@ async def get_health_report(request: HealthReportRequest):
                 print(f"ML prediction failed, using rule-based: {ml_err}")
                 ml_rul = None
         
+        # Pass ml_rul into health report so it starts the forecast correctly
         report = build_health_report(
             sensor_data=request.sensor_data,
-            degradation_level=request.degradation_level
+            degradation_level=request.degradation_level,
+            ml_rul=ml_rul
         )
         
-        # Override RUL with ML model prediction if available
         if ml_rul is not None:
-            report['rul_percent'] = round(ml_rul, 2)
             report['rul_source'] = f'ML Model ({ml_trainer.best_model_name})'
-            # Recompute status based on ML-predicted RUL
-            from utils.status_utils import get_status_from_features
-            snr = report.get('sensor_stats', {}).get('snr', 30)
-            drift = report.get('sensor_stats', {}).get('mean_drift', 0.002)
-            noise = report.get('sensor_stats', {}).get('mean_noise', 0.01)
-            temp = report.get('sensor_stats', {}).get('mean_temp', 25.0)
-            status_result = get_status_from_features(snr, drift, noise, ml_rul, temp)
-            report['status'] = status_result['status']
-            report['triggered_rule'] = status_result['triggered_rule']
-            report['rule_reason'] = status_result['rule_reason']
         else:
             report['rul_source'] = 'Rule-based estimation'
         
