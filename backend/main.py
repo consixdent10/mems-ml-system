@@ -292,15 +292,53 @@ async def get_health_report(request: HealthReportRequest):
     Get unified health report with RUL, status, risks, forecast.
     
     This is the single source of truth for all sensor health data.
-    All tabs should use this endpoint for consistent values.
+    When the ML model is trained, uses the model's prediction for RUL.
+    Otherwise falls back to rule-based estimation.
     """
     try:
         from utils.health_report import build_health_report
+        
+        # Use ML model prediction if trained
+        ml_rul = None
+        if ml_trainer.trained and request.sensor_data:
+            try:
+                import pandas as pd
+                df = pd.DataFrame(request.sensor_data)
+                if 'value' in df.columns:
+                    X, y = ml_trainer.prepare_data(df)
+                    X_scaled = ml_trainer.scaler.transform(X)
+                    best_name = ml_trainer.best_model_name
+                    if best_name and best_name in ml_trainer.models:
+                        model = ml_trainer.models[best_name]
+                        predictions = model.predict(X_scaled)
+                        # Use the mean prediction as the overall RUL
+                        ml_rul = float(np.clip(np.mean(predictions), 0, 100))
+                        print(f"ML Model ({best_name}) RUL prediction: {ml_rul:.1f}%")
+            except Exception as ml_err:
+                print(f"ML prediction failed, using rule-based: {ml_err}")
+                ml_rul = None
         
         report = build_health_report(
             sensor_data=request.sensor_data,
             degradation_level=request.degradation_level
         )
+        
+        # Override RUL with ML model prediction if available
+        if ml_rul is not None:
+            report['rul_percent'] = round(ml_rul, 2)
+            report['rul_source'] = f'ML Model ({ml_trainer.best_model_name})'
+            # Recompute status based on ML-predicted RUL
+            from utils.status_utils import get_status_from_features
+            snr = report.get('sensor_stats', {}).get('snr', 30)
+            drift = report.get('sensor_stats', {}).get('mean_drift', 0.002)
+            noise = report.get('sensor_stats', {}).get('mean_noise', 0.01)
+            temp = report.get('sensor_stats', {}).get('mean_temp', 25.0)
+            status_result = get_status_from_features(snr, drift, noise, ml_rul, temp)
+            report['status'] = status_result['status']
+            report['triggered_rule'] = status_result['triggered_rule']
+            report['rule_reason'] = status_result['rule_reason']
+        else:
+            report['rul_source'] = 'Rule-based estimation'
         
         return {
             "success": True,
