@@ -172,28 +172,24 @@ class MLModelTrainer:
         
         return X, y.astype(float)
     
-    def _compute_prediction_accuracy(self, y_true, y_pred):
+    def _compute_prediction_accuracy(self, y_true, y_pred, tolerance=5.0):
         """
-        Compute prediction accuracy by binning RUL into health categories.
+        Compute prediction accuracy using tolerance-band method (PHM standard).
         
-        Categories:
-            Healthy:  RUL >= 70%
-            Warning:  30% <= RUL < 70%
-            Critical: RUL < 30%
+        A prediction is 'correct' if it falls within +/- tolerance
+        percentage points of the actual RUL value.
         
-        Accuracy = % of predictions that fall in the same category as actual.
+        Default tolerance = 5 percentage points.
+        This is the standard evaluation metric in Prognostics & Health
+        Management (PHM) literature, more meaningful than arbitrary bins
+        for continuous RUL prediction.
         """
-        def categorize(rul_values):
-            categories = np.empty(len(rul_values), dtype=int)
-            categories[rul_values >= 70] = 2   # Healthy
-            categories[(rul_values >= 30) & (rul_values < 70)] = 1  # Warning
-            categories[rul_values < 30] = 0    # Critical
-            return categories
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
         
-        actual_cats = categorize(np.asarray(y_true))
-        pred_cats = categorize(np.asarray(y_pred))
-        
-        accuracy = float(np.mean(actual_cats == pred_cats) * 100)
+        errors = np.abs(y_true - y_pred)
+        correct = np.sum(errors <= tolerance)
+        accuracy = float(correct / len(y_true) * 100)
         return round(accuracy, 1)
     
     def train_all_models(self, data):
