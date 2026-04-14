@@ -54,18 +54,26 @@ def get_status_from_features(snr: float, drift: float, noise: float,
             'status_reason_details': details
         }
     
-    # Check WARNING conditions (any one triggers)
+    # Check WARNING conditions
+    # RUL is primary; SNR/drift/noise are secondary
+    # Only warn if RUL is in warning range OR multiple secondary indicators trigger
     warning_reasons = []
+    secondary_warnings = 0
     if 10 < snr <= 20:
-        warning_reasons.append(f"SNR={snr:.1f} (10-20)")
+        secondary_warnings += 1
     if 0.02 <= drift < 0.05:
         warning_reasons.append(f"Drift={drift:.4f} (0.02-0.05)")
+        secondary_warnings += 1
     if 0.08 <= noise < 0.12:
         warning_reasons.append(f"Noise={noise:.4f} (0.08-0.12)")
+        secondary_warnings += 1
     if 30 <= rul_percent < 70:
         warning_reasons.append(f"RUL={rul_percent:.1f}% (30-70%)")
     
-    if warning_reasons:
+    # Trigger WARNING only if RUL is in warning range OR 2+ secondary indicators
+    if warning_reasons or secondary_warnings >= 2:
+        if not warning_reasons and secondary_warnings >= 2:
+            warning_reasons.append("Multiple degradation indicators detected")
         return {
             'status': 'WARNING',
             'triggered_rule': 'Rule 2 (Warning Threshold)',
