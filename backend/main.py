@@ -675,7 +675,7 @@ async def generate_xai_analysis(request: TrainModelsRequest):
         data = pd.DataFrame(request.sensor_data)
         
         # Generate XAI insights
-        xai_results = xai_analyzer.analyze(data)
+        xai_results = xai_analyzer.analyze(data, ml_trainer=ml_trainer)
         
         print("XAI analysis completed successfully")
         
