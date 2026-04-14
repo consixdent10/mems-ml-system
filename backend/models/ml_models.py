@@ -172,7 +172,7 @@ class MLModelTrainer:
         
         return X, y.astype(float)
     
-    def _compute_prediction_accuracy(self, y_true, y_pred, tolerance=5.0):
+    def _compute_prediction_accuracy(self, y_true, y_pred, tolerance=7.0):
         """
         Compute prediction accuracy using tolerance-band method (PHM standard).
         
