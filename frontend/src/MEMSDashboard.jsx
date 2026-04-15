@@ -422,6 +422,16 @@ const MEMSDashboard = () => {
     // Unified health report from backend
     const [healthReport, setHealthReport] = useState(null);
 
+    // Memoized anomaly data to prevent repetitive slow array passes
+    const anomalyData = React.useMemo(() => {
+        if (!sensorData || sensorData.length === 0) return { all: [], normal: [], anomalous: [] };
+        const results = detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold);
+        // Subsample normal data to keep charts smooth, but display full time domain
+        const normal = results.filter(a => !a.isAnomaly).filter((_, i) => i % 5 === 0);
+        const anomalous = results.filter(a => a.isAnomaly);
+        return { all: results, normal, anomalous };
+    }, [sensorData, anomalyWindowSize, anomalyThreshold]);
+
     useEffect(() => {
         generateData();
     }, [selectedDataset]);
@@ -1956,7 +1966,7 @@ const MEMSDashboard = () => {
                                     <h3 className="text-xl font-semibold">🔍 Rolling Z-Score Anomaly Detection</h3>
                                     <div className="bg-slate-700 px-4 py-2 rounded-lg">
                                         <span className="text-gray-400">Total Anomalies: </span>
-                                        <span className="font-bold text-red-400">{detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).length}</span>
+                                        <span className="font-bold text-red-400">{anomalyData.anomalous.length}</span>
                                         <span className="text-gray-400"> / {sensorData.length}</span>
                                     </div>
                                 </div>
@@ -2010,12 +2020,12 @@ const MEMSDashboard = () => {
                                     <ResponsiveContainer width="100%" height={300}>
                                         <ScatterChart>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                            <XAxis dataKey="time" stroke="#9CA3AF" label={{ value: 'Time (s)', position: 'insideBottom', offset: -5 }} />
+                                            <XAxis type="number" dataKey="time" domain={['dataMin', 'dataMax']} stroke="#9CA3AF" label={{ value: 'Time (s)', position: 'insideBottom', offset: -5 }} />
                                             <YAxis dataKey="value" stroke="#9CA3AF" label={{ value: `Value (${getSensorUnit()})`, angle: -90, position: 'insideLeft' }} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none' }} labelFormatter={(value) => `Time: ${parseFloat(value).toFixed(2)}s`} />
                                             <Legend />
-                                            <Scatter data={detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => !a.isAnomaly).slice(0, 200)} fill="#10B981" name="Normal" />
-                                            <Scatter data={detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly)} fill="#EF4444" name="Anomaly" shape="star" />
+                                            <Scatter data={anomalyData.normal} fill="#10B981" name="Normal" />
+                                            <Scatter data={anomalyData.anomalous} fill="#EF4444" name="Anomaly" shape="star" />
                                         </ScatterChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -2024,15 +2034,15 @@ const MEMSDashboard = () => {
                                 <div className="bg-slate-700 rounded-lg p-4">
                                     <h4 className="font-semibold mb-3 text-blue-400">Recent Anomalies</h4>
                                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                                        {detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).slice(-10).reverse().map((anomaly, idx) => (
+                                        {anomalyData.anomalous.slice(-10).reverse().map((anomaly, idx) => (
                                             <div key={idx} className="flex justify-between items-center bg-slate-600 p-2 rounded">
                                                 <span className="text-sm">Time: {anomaly.time}s</span>
                                                 <span className="text-sm">Value: {parseFloat(anomaly.value).toFixed(4)}</span>
                                                 <span className="text-sm font-semibold text-red-400">Z-Score: {anomaly.score}</span>
                                             </div>
                                         ))}
-                                        {detectAnomalies(sensorData, anomalyWindowSize, anomalyThreshold).filter(a => a.isAnomaly).length === 0 && (
-                                            <p PclassName="text-gray-400 text-center py-4">No anomalies detected with current parameters</p>
+                                        {anomalyData.anomalous.length === 0 && (
+                                            <p className="text-gray-400 text-center py-4">No anomalies detected with current parameters</p>
                                         )}
                                     </div>
                                 </div>
