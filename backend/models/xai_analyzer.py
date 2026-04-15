@@ -35,13 +35,21 @@ class XAIAnalyzer:
         predictions = model.predict(X_scaled)
         rul_percent = float(np.clip(np.mean(predictions), 0, 100))
         
-        # Feature names matching prepare_data output (11 features)
-        feature_names = [
-            'Mean', 'Std Dev', 'RMS', 'Peak-to-Peak',
-            'Skewness', 'Kurtosis', 'Crest Factor',
-            'Energy', 'Zero Crossings', 'Impulse Factor',
-            'Operating Time'
-        ]
+        feature_names = getattr(ml_trainer, 'feature_names', [
+            'RMS',
+            'Std Dev',
+            'Peak',
+            'Peak-to-Peak',
+            'Kurtosis',
+            'Skewness',
+            'Crest Factor',
+            'Shape Factor',
+            'Impulse Factor',
+            'Freq Energy',
+            'Mean Drift',
+            'Mean Noise',
+            'Mean Temperature',
+        ])
         
         # Calculate feature importance using permutation importance
         from sklearn.metrics import r2_score
@@ -60,17 +68,19 @@ class XAIAnalyzer:
         
         # Map features to their impact on RUL
         impact_mapping = {
-            'Mean': 'depends (context-based)',
-            'Std Dev': 'decreases RUL',
             'RMS': 'decreases RUL',
+            'Std Dev': 'decreases RUL',
+            'Peak': 'indicates faults',
             'Peak-to-Peak': 'decreases RUL',
-            'Skewness': 'depends (context-based)',
             'Kurtosis': 'indicates faults',
+            'Skewness': 'depends (context-based)',
             'Crest Factor': 'indicates faults',
-            'Energy': 'decreases RUL',
-            'Zero Crossings': 'depends (context-based)',
+            'Shape Factor': 'depends (context-based)',
             'Impulse Factor': 'indicates faults',
-            'Operating Time': 'decreases RUL'
+            'Freq Energy': 'decreases RUL',
+            'Mean Drift': 'decreases RUL',
+            'Mean Noise': 'decreases RUL',
+            'Mean Temperature': 'depends (environmental)'
         }
         
         # Current feature values (use mean of all windows)
@@ -105,9 +115,14 @@ class XAIAnalyzer:
         
         # Determine status from ML-predicted RUL
         from utils.status_utils import get_status_from_features
+        snr_val = float(np.mean(data['value']) / (np.std(data['value']) + 1e-6)) if 'value' in data else 30.0
+        drift_val = float(np.mean(data['drift'])) if 'drift' in data else 0.002
+        noise_val = float(np.mean(np.abs(data['noise']))) if 'noise' in data else 0.01
+        temp_val = float(np.mean(data['temperature'])) if 'temperature' in data else 25.0
+        
         status_result = get_status_from_features(
-            snr=30.0, drift=0.002, noise=0.01,
-            rul_percent=rul_percent, temperature=25.0
+            snr=snr_val, drift=drift_val, noise=noise_val,
+            rul_percent=rul_percent, temperature=temp_val
         )
         
         # Model confidence from R²
@@ -127,18 +142,20 @@ class XAIAnalyzer:
             for fi in feature_importance[:4]
         ]
         
+        details = status_result['status_reason_details'].copy()
+        details.update({
+            'model_used': best_name,
+            'r2_score': round(r2, 4),
+            'num_features': len(feature_names),
+            'num_samples': len(y)
+        })
+        
         explanation = {
             'prediction': status_result['status'],
             'confidence': confidence_percent,
             'triggered_rule': status_result['triggered_rule'],
             'rule_reason': status_result['rule_reason'],
-            'status_reason_details': {
-                'rul_percent': round(rul_percent, 2),
-                'model_used': best_name,
-                'r2_score': round(r2, 4),
-                'num_features': len(feature_names),
-                'num_samples': len(y)
-            },
+            'status_reason_details': details,
             'status_source': f'ML Model ({best_name}) with {len(feature_names)} statistical features',
             'confidence_source': f'R\u00b2 score of {best_name} model on test data',
             'mainReasons': [

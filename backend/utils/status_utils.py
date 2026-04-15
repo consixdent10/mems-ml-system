@@ -87,7 +87,7 @@ def get_status_from_features(snr: float, drift: float, noise: float,
     return {
         'status': 'HEALTHY',
         'triggered_rule': 'Rule 1 (All Normal)',
-        'rule_reason': f"SNR={snr:.1f} (>20), Drift={drift:.4f} (<0.02), Noise={noise:.4f} (<0.08), RUL={rul_percent:.1f}% (≥70%)",
+        'rule_reason': f"Parameters normal: SNR={snr:.1f}, Drift={drift:.4f}, Noise={noise:.4f}, RUL={rul_percent:.1f}%",
         'status_reason_details': details
     }
 

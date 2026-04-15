@@ -1645,7 +1645,7 @@ const MEMSDashboard = () => {
                                                             </div>
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <span className="text-sm text-gray-400">
-                                                                    {reason.direction === 'increases' ? '↑' : '↓'} {reason.direction} confidence
+                                                                    {reason.direction === 'increases' ? '↑ High Impact' : '↓ Low Impact'}
                                                                 </span>
                                                                 {reason.impact_on_rul && (
                                                                     <span className={`text-xs px-2 py-0.5 rounded ${reason.impact_type === 'bad' ? 'bg-red-900/50 text-red-300' : reason.impact_type === 'good' ? 'bg-green-900/50 text-green-300' : 'bg-gray-700 text-gray-300'}`}>
