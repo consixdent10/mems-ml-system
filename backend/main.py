@@ -147,14 +147,22 @@ async def startup_event():
         try:
             import joblib
             best_model = joblib.load(best_model_path)
-            ml_trainer.scaler = joblib.load(scaler_path)
+            scaler = joblib.load(scaler_path)
+            expected_features = ml_trainer.expected_feature_count
+            saved_features = getattr(scaler, "n_features_in_", expected_features)
+            if saved_features != expected_features:
+                raise ValueError(
+                    f"Saved scaler expects {saved_features} features, "
+                    f"current trainer expects {expected_features}"
+                )
+            ml_trainer.scaler = scaler
             ml_trainer.models = {"Best Model": best_model}
             ml_trainer.best_model_name = "Best Model"
             ml_trainer.trained = True
-            print(f"[STARTUP] ✅ Loaded saved best model from {best_model_path}")
+            print(f"[STARTUP] Loaded saved best model from {best_model_path}")
             return
         except Exception as e:
-            print(f"[STARTUP] ⚠️ Failed to load saved model: {e}")
+            print(f"[STARTUP] Failed to load saved model: {e}")
     
     # Option B: Check for any saved session
     saved_models_dir = os.path.join(os.path.dirname(__file__), 'saved_models')
@@ -165,26 +173,26 @@ async def startup_event():
             latest_session = sorted(sessions)[-1]
             print(f"[STARTUP] Found saved session: {latest_session}")
             ml_trainer.load_model(latest_session)
-            print(f"[STARTUP] ✅ Loaded models from session: {latest_session}")
+            print(f"[STARTUP] Loaded models from session: {latest_session}")
             return
     except Exception as e:
-        print(f"[STARTUP] ⚠️ No saved sessions loadable: {e}")
+        print(f"[STARTUP] No saved sessions loadable: {e}")
     
     # Option C: Auto-train on synthetic data
     print("[STARTUP] No saved models found. Auto-training on synthetic data...")
     try:
-        synthetic_data = data_processor.generate_data(
+        synthetic_data = data_processor.generate_mems_data(
             sensor_type="accelerometer",
             num_samples=1000,
             degradation_level=25
         )
-        df = pd.DataFrame(synthetic_data["data"])
+        df = pd.DataFrame(synthetic_data)
         results = ml_trainer.train_all_models(df)
-        print(f"[STARTUP] ✅ Auto-trained {len(results['models'])} models")
-        print(f"[STARTUP] ✅ Best model: {results['bestModel']}")
+        print(f"[STARTUP] Auto-trained {len(results['models'])} models")
+        print(f"[STARTUP] Best model: {results['bestModel']}")
     except Exception as e:
-        print(f"[STARTUP] ❌ Auto-training failed: {e}")
-        print("[STARTUP] ⚠️ Server running but /api/predict will return 'Models not trained yet'")
+        print(f"[STARTUP] Auto-training failed: {e}")
+        print("[STARTUP] Server running but /api/predict will return 'Models not trained yet'")
 
 
 # Pydantic models
@@ -592,6 +600,36 @@ async def predict(request: PredictionRequest):
     
     try:
         f = request.features
+        prediction = ml_trainer.predict({
+            "value": f.rms_amplitude,
+            "mean": f.rms_amplitude,
+            "temperature": max(0.0, min(100.0, f.spectral_entropy * 100)),
+            "drift": f.skewness * 0.01,
+            "noise": max(abs(f.kurtosis) * 0.01, 0.001),
+        })
+        rul_prediction = float(prediction['rulPercent'])
+
+        if rul_prediction >= 80:
+            fault_type = "Normal"
+            confidence = min(0.95, 0.80 + (rul_prediction - 80) * 0.0075)
+        elif rul_prediction >= 50:
+            fault_type = "Early Degradation"
+            confidence = min(0.90, 0.70 + (80 - rul_prediction) * 0.005)
+        elif rul_prediction >= 25:
+            fault_type = "Moderate Wear"
+            confidence = min(0.92, 0.75 + (50 - rul_prediction) * 0.005)
+        else:
+            fault_type = "Critical Failure"
+            confidence = min(0.97, 0.85 + (25 - rul_prediction) * 0.005)
+
+        return {
+            "fault_type": fault_type,
+            "confidence": round(confidence, 4),
+            "health_score": int(round(rul_prediction)),
+            "remaining_life_days": int(round(rul_prediction * 3.65)),
+            "rul_percent": round(rul_prediction, 2),
+            "model_used": prediction['model']
+        }
         
         # Map frontend features → training features:
         #   value       ← rms_amplitude (direct vibration measurement)
@@ -683,14 +721,21 @@ async def generate_xai_analysis(request: TrainModelsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/predict", tags=["Predictions"])
+@app.post("/api/predict/basic", tags=["Predictions"])
 async def make_prediction(request: PredictionRequest):
     """Make RUL prediction using trained models."""
     try:
-        prediction = ml_trainer.predict(request.features)
+        f = request.features
+        prediction = ml_trainer.predict({
+            "value": f.rms_amplitude,
+            "mean": f.rms_amplitude,
+            "temperature": max(0.0, min(100.0, f.spectral_entropy * 100)),
+            "drift": f.skewness * 0.01,
+            "noise": max(abs(f.kurtosis) * 0.01, 0.001),
+        })
         
         return {
-            "prediction": prediction['value'],
+            "prediction": prediction['rulPercent'],
             "confidence": prediction['confidence'],
             "model_used": prediction['model'],
             "timestamp": datetime.now().isoformat()

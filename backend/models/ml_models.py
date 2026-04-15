@@ -1,11 +1,3 @@
-"""
-MEMS ML Model Training Pipeline
-
-Two ML pipelines:
-1. RUL Regression - Predicts Remaining Useful Life (%) with accuracy metric
-2. Fault Classification - Classifies fault type (Normal/Inner Race/Outer Race/Ball)
-   using genuine data from CWRU, ADI MEMS, and NASA IMS datasets
-"""
 
 import numpy as np
 import pandas as pd
@@ -102,9 +94,78 @@ class MLModelTrainer:
         self.model_paths = {}
         self.best_model_name = None
         self.predictions_sample = None
+        self.feature_names = [
+            'RMS',
+            'Std Dev',
+            'Peak',
+            'Peak-to-Peak',
+            'Kurtosis',
+            'Skewness',
+            'Crest Factor',
+            'Shape Factor',
+            'Impulse Factor',
+            'Freq Energy',
+            'Mean Drift',
+            'Mean Noise',
+            'Mean Temperature',
+        ]
         
         # Create saved_models directory if it doesn't exist
         os.makedirs(SAVED_MODELS_DIR, exist_ok=True)
+
+    @property
+    def expected_feature_count(self):
+        return len(self.feature_names)
+
+    def _window_aux_features(self, data, start, end):
+        """Extract drift/noise/temperature features for one training window."""
+        window = data.iloc[start:end]
+        values = window['value'].astype(float).values
+
+        if 'drift' in window.columns:
+            mean_drift = float(np.mean(np.abs(window['drift'].astype(float).values)))
+        else:
+            mean_drift = float(abs(values[-1] - values[0]) / max(len(values), 1))
+
+        if 'noise' in window.columns:
+            mean_noise = float(np.mean(np.abs(window['noise'].astype(float).values)))
+        else:
+            smooth_window = min(10, len(values))
+            smoothed = pd.Series(values).rolling(window=smooth_window, min_periods=1).mean().values
+            mean_noise = float(np.std(values - smoothed))
+
+        if 'temperature' in window.columns:
+            mean_temp = float(np.mean(window['temperature'].astype(float).values))
+        else:
+            mean_temp = 25.0
+
+        return mean_drift, mean_noise, mean_temp
+
+    def _estimate_window_rul(self, feats, mean_drift, mean_noise, mean_temp):
+        """
+        Estimate RUL from physical/signal indicators instead of row position.
+
+        Using row position made the end of a healthy dataset look degraded. These
+        indicators keep baseline data healthy while lowering RUL for noisy,
+        impulsive, high-vibration windows.
+        """
+        drift_score = safe_minmax([0.002, mean_drift, 0.06])[1] * 100
+        noise_score = safe_minmax([0.01, mean_noise, 0.15])[1] * 100
+        temp_score = min(abs(mean_temp - 25.0) * 2.0, 20.0)
+
+        vibration_score = (feats['std'] / (feats['std'] + 0.25)) * 100 if feats['std'] > 0 else 0
+        impulsive_score = min(max(feats['kurtosis'], 0) / 10.0 * 100, 100)
+        crest_score = min(max(feats['crest_factor'] - 3.0, 0) / 3.0 * 100, 100)
+
+        degradation = (
+            0.20 * drift_score +
+            0.20 * noise_score +
+            0.10 * temp_score +
+            0.25 * vibration_score +
+            0.15 * impulsive_score +
+            0.10 * crest_score
+        )
+        return float(np.clip(100 - degradation, 0, 100))
         
     def prepare_data(self, data):
         """
@@ -170,6 +231,62 @@ class MLModelTrainer:
         y = y + np.random.normal(0, 1, len(y)) * noise_std
         y = np.clip(y, 0, 100)
         
+        return X, y.astype(float)
+
+    def prepare_data(self, data):
+        """
+        Prepare windowed features and RUL targets from sensor data.
+
+        The target is derived from physical/signal degradation indicators. It
+        does not use row position, so a healthy baseline recording remains
+        healthy throughout the file.
+        """
+        values = data['value'].astype(float).values
+        n = len(values)
+
+        window_size = min(50, n // 10)
+        if window_size < 20:
+            window_size = 20
+
+        step = max(1, window_size // 6)
+
+        feature_rows = []
+        targets = []
+        for start in range(0, n - window_size, step):
+            segment = values[start:start + window_size]
+            feats = extract_statistical_features(segment)
+            mean_drift, mean_noise, mean_temp = self._window_aux_features(
+                data, start, start + window_size
+            )
+            feats['mean_drift'] = mean_drift
+            feats['mean_noise'] = mean_noise
+            feats['mean_temperature'] = mean_temp
+            feature_rows.append(feats)
+            targets.append(self._estimate_window_rul(feats, mean_drift, mean_noise, mean_temp))
+
+        if not feature_rows:
+            raise ValueError("Not enough sensor samples to train models")
+
+        X = pd.DataFrame(feature_rows)[[
+            'rms',
+            'std',
+            'peak',
+            'peak_to_peak',
+            'kurtosis',
+            'skewness',
+            'crest_factor',
+            'shape_factor',
+            'impulse_factor',
+            'freq_energy',
+            'mean_drift',
+            'mean_noise',
+            'mean_temperature',
+        ]].values
+
+        rng = np.random.default_rng(42)
+        y = np.asarray(targets, dtype=float)
+        y = np.clip(y + rng.normal(0, 0.75, len(y)), 0, 100)
+
         return X, y.astype(float)
     
     def _compute_prediction_accuracy(self, y_true, y_pred, tolerance=7.0):
@@ -356,8 +473,9 @@ class MLModelTrainer:
         # ===== GENERALIZATION TEST =====
         generalization_metrics = None
         try:
-            train_mask = y >= 50
-            test_mask = y < 50
+            median_rul = np.median(y)
+            train_mask = y >= median_rul
+            test_mask = y < median_rul
             
             if np.sum(train_mask) > 20 and np.sum(test_mask) > 10:
                 X_gen_train = X[train_mask]
@@ -381,7 +499,7 @@ class MLModelTrainer:
                     'accuracy': gen_accuracy,
                     'trainSize': int(np.sum(train_mask)),
                     'testSize': int(np.sum(test_mask)),
-                    'description': 'Train on RUL>=50%, Test on RUL<50%'
+                    'description': 'Train on healthier half, test on more degraded half'
                 }
                 print(f"Generalization Test - Accuracy: {gen_accuracy}%, "
                       f"R2: {gen_metrics['r2Score']:.4f}")
@@ -467,15 +585,10 @@ class MLModelTrainer:
         pseudo_signal += np.random.normal(0, max(abs(noise), 0.001), 200)
         feats = extract_statistical_features(pseudo_signal)
         
-        # 11 features: 10 statistical + 1 operating_time
-        # For single-point prediction, use drift as proxy for operating time
-        # Higher drift = more degraded = higher operating time
-        operating_time = min(1.0, max(0.0, abs(drift) / 0.06))
-        
         X = np.array([[feats['rms'], feats['std'], feats['peak'], feats['peak_to_peak'],
                         feats['kurtosis'], feats['skewness'], feats['crest_factor'],
                         feats['shape_factor'], feats['impulse_factor'], feats['freq_energy'],
-                        operating_time]])
+                        abs(drift), abs(noise), temperature]])
         
         X_scaled = self.scaler.transform(X)
         rul_prediction = model.predict(X_scaled)[0]
@@ -530,6 +643,8 @@ class MLModelTrainer:
             "model_names": list(self.models.keys()),
             "trained": self.trained,
             "best_model": self.best_model_name,
+            "feature_names": self.feature_names,
+            "feature_count": self.expected_feature_count,
             "saved_at": datetime.now().isoformat(),
             "session_id": session_name
         }, info_path)
@@ -553,6 +668,12 @@ class MLModelTrainer:
             info = joblib.load(info_path)
             model_names = info.get("model_names", [])
             self.best_model_name = info.get("best_model")
+            saved_feature_count = info.get("feature_count", self.expected_feature_count)
+            if saved_feature_count != self.expected_feature_count:
+                raise ValueError(
+                    f"Session {session_id} expects {saved_feature_count} features; "
+                    f"current trainer expects {self.expected_feature_count}"
+                )
         else:
             model_names = ["Random Forest", "Gradient Boosting", "SVM", "Neural Network"]
         
@@ -569,6 +690,12 @@ class MLModelTrainer:
         scaler_path = os.path.join(session_dir, "scaler.joblib")
         if os.path.exists(scaler_path):
             self.scaler = joblib.load(scaler_path)
+            saved_features = getattr(self.scaler, "n_features_in_", self.expected_feature_count)
+            if saved_features != self.expected_feature_count:
+                raise ValueError(
+                    f"Session {session_id} scaler expects {saved_features} features; "
+                    f"current trainer expects {self.expected_feature_count}"
+                )
             print(f"[ML] Loaded scaler from {scaler_path}")
         
         self.trained = True

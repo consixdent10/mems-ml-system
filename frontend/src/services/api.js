@@ -140,6 +140,19 @@ export const api = {
         });
         if (!response.ok) throw new Error('Failed to train classifier');
         return response.json();
+    },
+
+    // XAI Analysis
+    analyzeXAI: async (sensorData) => {
+        const response = await fetch(`${API_BASE_URL}/api/xai-analysis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sensor_data: sensorData
+            })
+        });
+        if (!response.ok) throw new Error('Failed to generate XAI analysis');
+        return response.json();
     }
 };
 
