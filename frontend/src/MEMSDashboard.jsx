@@ -601,6 +601,7 @@ const MEMSDashboard = () => {
             
             // Format data for api
             const dataToAnalyze = currentData.map(d => ({
+                ...d,
                 time: parseFloat(d.time || d.time_s),
                 value: parseFloat(d.value || d.m_s2 || d.vibration)
             }));
