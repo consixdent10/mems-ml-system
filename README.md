@@ -95,9 +95,10 @@ Each file was downloaded directly from: `https://raw.githubusercontent.com/analo
 
 ### Core Capabilities
 - **Real Sensor Data Analysis**: Trained on genuine CWRU Bearing Dataset accelerometer recordings, not synthetic data.
+- **Unified ML Backend Architecture**: Fully integrated end-to-end pipeline where frontend UI elements (Alerts, Forecast Curves, XAI) are natively driven by the Python backend's real-time ML inference, completely replacing heuristic prototyping logic.
 - **Statistical Anomaly Detection**: Uses a Rolling Z-Score algorithm with configurable threshold (2.0-4.0) and window size parameters.
 - **Machine Learning Regression**: Trains `scikit-learn` models (Random Forest, Gradient Boosting, SVM, MLP) to estimate Remaining Useful Life (RUL).
-- **Model Explainability (XAI)**: Integrates SHAP-like feature attribution to understand which sensor metrics drive the RUL predictions.
+- **Model Explainability (XAI)**: Integrates Permutation Feature Importance mapping directly to the active `scikit-learn` model to understand which physical sensor metrics drive the RUL predictions.
 - **Signal Processing**: Backend `numpy.fft` for Fast Fourier Transforms and Wavelet transforms for frequency analysis.
 
 ### Dashboard Architecture

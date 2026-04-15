@@ -594,52 +594,28 @@ const MEMSDashboard = () => {
         }
     };
 
-    const generateXAIAnalysis = (models, features) => {
-        // Generate SHAP-like values for feature importance
-        const featureNames = ['Mean', 'Std Dev', 'SNR', 'Drift', 'Temperature', 'Noise', 'RMS'];
-        const contributions = featureNames.map(name => ({
-            feature: name,
-            importance: Math.random() * 0.3 + 0.05,
-            impact: Math.random() > 0.5 ? 'positive' : 'negative'
-        }));
-
-        // Sort by importance
-        contributions.sort((a, b) => b.importance - a.importance);
-        setFeatureContributions(contributions);
-
-        // Generate SHAP values
-        const shapData = contributions.map(c => ({
-            feature: c.feature,
-            shapValue: (c.impact === 'positive' ? 1 : -1) * c.importance * 10,
-            baseValue: parseFloat(features.mean) || 0
-        }));
-        setShapValues(shapData);
-
-        // Generate prediction explanation
-        const bestModel = models.reduce((best, m) =>
-            parseFloat(m.accuracy) > parseFloat(best.accuracy) ? m : best
-        );
-
-        const explanation = {
-            prediction: parseFloat(rul) > 70 ? 'HEALTHY' : parseFloat(rul) > 40 ? 'WARNING' : 'CRITICAL',
-            confidence: parseFloat(bestModel.confidence) * 100,
-            mainReasons: contributions.slice(0, 3).map(c => ({
-                feature: c.feature,
-                contribution: (c.importance * 100).toFixed(1) + '%',
-                direction: c.impact === 'positive' ? 'increases' : 'decreases',
-                value: features[c.feature.toLowerCase().replace(' ', '')] || 'N/A'
-            })),
-            modelUsed: bestModel.modelType,
-            uncertainty: parseFloat(bestModel.uncertainty) * 100
-        };
-
-        setPredictionExplanation(explanation);
-        setModelConfidence({
-            overall: parseFloat(bestModel.confidence) * 100,
-            modelAgreement: models.filter(m =>
-                Math.abs(parseFloat(m.accuracy) - parseFloat(bestModel.accuracy)) < 0.05
-            ).length / models.length * 100
-        });
+    const generateXAIAnalysis = async () => {
+        try {
+            const currentData = isUsingUploadedData ? uploadedData : sensorData;
+            if (!currentData || currentData.length === 0) return;
+            
+            // Format data for api
+            const dataToAnalyze = currentData.map(d => ({
+                time: parseFloat(d.time || d.time_s),
+                value: parseFloat(d.value || d.m_s2 || d.vibration)
+            }));
+            
+            const analysis = await api.analyzeXAI(dataToAnalyze);
+            
+            setFeatureContributions(analysis.feature_importance);
+            setShapValues(analysis.shap_values);
+            setPredictionExplanation(analysis.prediction_explanation);
+            setModelConfidence(analysis.confidence);
+            
+        } catch (error) {
+            console.error('Error generating XAI analysis:', error);
+            // Fallback empty UI on error
+        }
     };
 
     const exportData = () => {
