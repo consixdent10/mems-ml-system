@@ -565,7 +565,18 @@ async def train_models(request: TrainModelsRequest):
         print(f"Training models on {len(request.sensor_data)} data points")
         
         # Convert to DataFrame
-        data = pd.DataFrame(request.sensor_data)
+        data_input = pd.DataFrame(request.sensor_data)
+        train_dfs = []
+        for d_id in ['cwru_normal', 'adi_inner_race', 'nasa_degrading', 'cwru_ball']:
+            try:
+                hist_data, _ = dataset_loader.load_dataset(d_id)
+                train_dfs.append(hist_data)
+            except Exception:
+                pass
+        if train_dfs:
+            data = pd.concat(train_dfs, ignore_index=True)
+        else:
+            data = data_input
         
         # Train all models
         results = ml_trainer.train_all_models(data)
