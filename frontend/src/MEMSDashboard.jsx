@@ -1741,9 +1741,8 @@ const MEMSDashboard = () => {
                                             <div className="bg-slate-800 rounded-lg p-4 border-l-4 border-green-500">
                                                 <p className="font-semibold mb-2">Rule 1: Healthy Status</p>
                                                 <p className="text-sm text-gray-400">
-                                                    IF <span className="text-blue-400">SNR {'>'} 20</span> AND
-                                                    <span className="text-blue-400"> Drift {'<'} 0.01</span> AND
-                                                    <span className="text-blue-400"> Noise {'<'} 0.05</span>
+                                                    IF <span className="text-blue-400">RUL {'>='} 70%</span> AND
+                                                    <span className="text-blue-400"> ≤ 1 Secondary Anomaly</span>
                                                     <br />THEN: Classify as <span className="text-green-400 font-semibold">HEALTHY</span>
                                                 </p>
                                             </div>
@@ -1751,8 +1750,8 @@ const MEMSDashboard = () => {
                                             <div className="bg-slate-800 rounded-lg p-4 border-l-4 border-orange-500">
                                                 <p className="font-semibold mb-2">Rule 2: Warning Status</p>
                                                 <p className="text-sm text-gray-400">
-                                                    IF <span className="text-blue-400">10 {'<'} SNR {'<'} 20</span> OR
-                                                    <span className="text-blue-400"> Drift {'>'} 0.01</span>
+                                                    IF <span className="text-blue-400">30% {'<='} RUL {'<'} 70%</span> OR
+                                                    <span className="text-blue-400"> 2+ Secondary Anomalies</span>
                                                     <br />THEN: Classify as <span className="text-orange-400 font-semibold">WARNING</span>
                                                 </p>
                                             </div>
@@ -1760,9 +1759,8 @@ const MEMSDashboard = () => {
                                             <div className="bg-slate-800 rounded-lg p-4 border-l-4 border-red-500">
                                                 <p className="font-semibold mb-2">Rule 3: Critical Status</p>
                                                 <p className="text-sm text-gray-400">
-                                                    IF <span className="text-blue-400">SNR {'<'} 10</span> OR
-                                                    <span className="text-blue-400"> Drift {'>'} 0.05</span> OR
-                                                    <span className="text-blue-400"> RUL {'<'} 30%</span>
+                                                    IF <span className="text-blue-400">RUL {'<'} 30%</span> OR
+                                                    <span className="text-blue-400"> (RUL {'<'} 70% AND Extreme Noise/Drift)</span>
                                                     <br />THEN: Classify as <span className="text-red-400 font-semibold">CRITICAL</span>
                                                 </p>
                                             </div>
