@@ -60,8 +60,8 @@ def build_health_report(sensor_data=None, degradation_level=None, ml_rul=None):
             noise_power = np.var(values - smoothed) + 0.0001
         snr = float(10 * np.log10(signal_power / noise_power))
         
-        # Compute RUL from sensor data
-        rul_percent = compute_rul_from_sensor_data(mean_drift, mean_noise, mean_temp)
+        # Wait for ML model training for RUL estimation
+        rul_percent = 100.0
     elif degradation_level is not None:
         # Compute from degradation level (synthetic data mode)
         rul_percent = compute_rul_from_degradation_level(degradation_level)
