@@ -533,7 +533,8 @@ async def upload_sensor_data(file: UploadFile = File(...)):
         anomalies = data_processor.detect_anomalies(processed_data)
         
         # Calculate RUL
-        rul = data_processor.calculate_rul(processed_data)
+        # Force RUL to None to compel ML training step for all incoming data
+        rul = None
         
         print(f"Data processed successfully")
         
@@ -541,7 +542,7 @@ async def upload_sensor_data(file: UploadFile = File(...)):
             "data": processed_data.to_dict('records'),
             "features": features,
             "anomalies": anomalies,
-            "rul": float(rul),
+            "rul": rul,
             "metadata": {
                 "filename": file.filename,
                 "num_samples": len(processed_data),
@@ -574,6 +575,7 @@ async def train_models(request: TrainModelsRequest):
             except Exception:
                 pass
         if train_dfs:
+            train_dfs.append(data_input)
             data = pd.concat(train_dfs, ignore_index=True)
         else:
             data = data_input
