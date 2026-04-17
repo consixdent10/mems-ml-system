@@ -86,6 +86,36 @@ def build_health_report(sensor_data=None, degradation_level=None, ml_rul=None):
     # Override with ML RUL if provided
     if ml_rul is not None:
         rul_percent = ml_rul
+    else:
+        rul_percent = None
+        
+    if rul_percent is None:
+        return {
+            'rul_percent': 'Pending ML',
+            'status': 'AWAITING ML',
+            'triggered_rule': 'ML Model Not Trained',
+            'rule_reason': 'Train models to generate RUL and Status',
+            'status_reason_details': None,
+            'failure_risks': {
+                'drift_risk': 'N/A',
+                'noise_risk': 'N/A',
+                'temp_risk': 'N/A'
+            },
+            'maintenance_schedule': {
+                'summary': 'Awaiting ML Prediction',
+                'next_check_days': 'N/A',
+                'calibration_interval_days': 'N/A',
+                'notes': ['Train ML Models to unlock predictive maintenance']
+            },
+            'forecast': {'days': [], 'expected': [], 'upper': [], 'lower': []},
+            'sensor_stats': {
+                'mean_value': round(mean_value, 4) if 'mean_value' in locals() else 0,
+                'mean_drift': round(mean_drift, 4) if 'mean_drift' in locals() else 0,
+                'mean_noise': round(mean_noise, 4) if 'mean_noise' in locals() else 0,
+                'mean_temp': round(mean_temp, 2) if 'mean_temp' in locals() else 0,
+                'snr': round(snr, 2) if 'snr' in locals() else 0
+            }
+        }
         
     # Ensure RUL is clamped
     rul_percent = clamp(rul_percent, 0, 100)
