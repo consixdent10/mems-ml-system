@@ -42,11 +42,16 @@ def get_status_from_features(snr: float, drift: float, noise: float,
     critical_reasons = []
     if rul_percent < 30:
         critical_reasons.append(f"RUL={rul_percent:.1f}% (<30%)")
-    if rul_percent < 70:  # Only check secondary if RUL is concerning
-        if drift >= 0.05:
-            critical_reasons.append(f"Drift={drift:.4f} (>=0.05)")
-        if noise >= 0.12:
-            critical_reasons.append(f"Noise={noise:.4f} (>=0.12)")
+    
+    # Secondary indicators should trigger critical regardless of ML confidence
+    if drift >= 0.05:
+        critical_reasons.append(f"Drift={drift:.4f} (>=0.05)")
+    if noise >= 0.12:
+        critical_reasons.append(f"Noise={noise:.4f} (>=0.12)")
+    
+    # Optional fallback physical threshold check
+    if snr <= 10:
+        critical_reasons.append(f"SNR={snr:.1f} (<=10)")
     
     if critical_reasons:
         return {
