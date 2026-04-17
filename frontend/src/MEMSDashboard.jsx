@@ -566,14 +566,15 @@ const MEMSDashboard = () => {
 
             // Update Health Report and RUL state with the new ML prediction
             if (xaiResponse.prediction_explanation) {
-                setRul(xaiResponse.prediction_explanation.predicted_rul);
+                const expl = xaiResponse.prediction_explanation;
+                setRul(expl.predicted_rul);
                 setHealthReport(prev => ({
                     ...prev,
-                    rul_percent: xaiResponse.prediction_explanation.predicted_rul,
-                    status: xaiResponse.prediction_explanation.status,
-                    triggered_rule: xaiResponse.prediction_explanation.triggered_rule,
-                    rule_reason: xaiResponse.prediction_explanation.reason,
-                    status_reason_details: xaiResponse.prediction_explanation.details
+                    rul_percent: expl.predicted_rul,
+                    status: expl.prediction || expl.status,
+                    triggered_rule: expl.triggered_rule,
+                    rule_reason: expl.rule_reason || expl.reason,
+                    status_reason_details: expl.status_reason_details || expl.details
                 }));
             }
 

@@ -151,6 +151,7 @@ class XAIAnalyzer:
         })
         
         explanation = {
+            'predicted_rul': float(round(rul_percent, 1)),
             'prediction': status_result['status'],
             'confidence': confidence_percent,
             'triggered_rule': status_result['triggered_rule'],
@@ -230,6 +231,7 @@ class XAIAnalyzer:
         ]
         
         explanation = {
+            'predicted_rul': float(round(rul_percent, 1)),
             'prediction': status_result['status'],
             'confidence': 50.0,
             'triggered_rule': status_result['triggered_rule'],
