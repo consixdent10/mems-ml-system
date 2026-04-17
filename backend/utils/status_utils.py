@@ -48,11 +48,7 @@ def get_status_from_features(snr: float, drift: float, noise: float,
         critical_reasons.append(f"Drift={drift:.4f} (>=0.05)")
     if noise >= 0.12:
         critical_reasons.append(f"Noise={noise:.4f} (>=0.12)")
-    
-    # Optional fallback physical threshold check
-    if snr <= 10:
-        critical_reasons.append(f"SNR={snr:.1f} (<=10)")
-    
+
     if critical_reasons:
         return {
             'status': 'CRITICAL',
