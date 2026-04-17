@@ -1124,12 +1124,28 @@ const MEMSDashboard = () => {
             setRul(response.rul);
             setAnomalies(response.anomalies);
 
+            // Clear ML state for new data to avoid stale reports
+            setHealthReport(null);
+            setPredictionExplanation(null);
+            setModelResults([]);
+            setBestModel(null);
+
             // Process FFT and Wavelet locally
             const fft = performFFT(response.data);
             setFftData(fft.frequencies);
 
             const wavelet = waveletTransform(response.data);
             setWaveletData(wavelet);
+
+            // Fetch unified health report from backend to get initial 'AWAITING ML' status
+            try {
+                const reportResponse = await api.healthReport(response.data, null);
+                if (reportResponse?.health_report) {
+                    setHealthReport(reportResponse.health_report);
+                }
+            } catch (hrError) {
+                console.error('Health report fetch failed:', hrError);
+            }
 
             // Generate alerts
             const newAlerts = [];
@@ -1361,7 +1377,7 @@ const MEMSDashboard = () => {
                                     onClick={clearUploadedData}
                                     className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition"
                                 >
-                                    Clear & Use Synthetic Data
+                                    Clear & Use Real Data
                                 </button>
                             )}
                         </div>
@@ -1451,12 +1467,14 @@ const MEMSDashboard = () => {
                         <p className="text-sm text-green-100">Mean Value ({getSensorUnit()})</p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg p-4 shadow-lg overflow-hidden">
+                    <div className={`bg-gradient-to-br rounded-lg p-4 shadow-lg overflow-hidden ${healthReport?.status === 'AWAITING ML' ? 'from-slate-600 to-slate-700' : 'from-orange-600 to-orange-700'}`}>
                         <div className="flex items-center justify-between mb-2">
                             <AlertTriangle size={24} />
-                            <span className="text-2xl font-bold truncate">{rul ? parseFloat(rul).toFixed(1) : '0'}%</span>
+                            <span className={`font-bold truncate ${healthReport?.status === 'AWAITING ML' || rul == null ? 'text-lg' : 'text-2xl'}`}>
+                                {healthReport?.rul_percent === 'Pending ML' || rul == null ? 'Pending ML' : `${parseFloat(rul).toFixed(1)}%`}
+                            </span>
                         </div>
-                        <p className="text-sm text-orange-100">Remaining Useful Life</p>
+                        <p className={`text-sm ${healthReport?.status === 'AWAITING ML' ? 'text-slate-200' : 'text-orange-100'}`}>Remaining Useful Life</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-4 shadow-lg overflow-hidden">
@@ -1790,8 +1808,8 @@ const MEMSDashboard = () => {
                                 <div className="bg-slate-700 rounded-lg p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
-                                            <h4 className="text-2xl font-bold text-blue-400">
-                                                {healthReport?.rul_percent?.toFixed(1) || rul}%
+                                            <h4 className={`font-bold text-blue-400 ${healthReport?.status === 'AWAITING ML' || rul == null ? 'text-xl' : 'text-2xl'}`}>
+                                                {healthReport?.rul_percent === 'Pending ML' || rul == null ? 'Pending ML' : `${healthReport?.rul_percent != null ? healthReport.rul_percent.toFixed(1) : rul}%`}
                                             </h4>
                                             <p className="text-gray-400">Remaining Useful Life</p>
                                             {healthReport?.triggered_rule && (
@@ -1801,10 +1819,12 @@ const MEMSDashboard = () => {
                                         <div className={`px-4 py-2 rounded-full ${healthReport?.status === 'HEALTHY' ? 'bg-green-600' :
                                             healthReport?.status === 'WARNING' ? 'bg-orange-600' :
                                                 healthReport?.status === 'CRITICAL' ? 'bg-red-600' :
-                                                    parseFloat(rul) > 70 ? 'bg-green-600' :
-                                                        parseFloat(rul) > 40 ? 'bg-orange-600' : 'bg-red-600'
+                                                    healthReport?.status === 'AWAITING ML' || rul == null ? 'bg-slate-600' :
+                                                        parseFloat(rul) > 70 ? 'bg-green-600' :
+                                                            parseFloat(rul) > 40 ? 'bg-orange-600' : 'bg-red-600'
                                             }`}>
-                                            {healthReport?.status || (parseFloat(rul) > 70 ? 'HEALTHY' :
+                                            {healthReport?.status || (rul == null ? 'AWAITING ML' : 
+                                                parseFloat(rul) > 70 ? 'HEALTHY' :
                                                 parseFloat(rul) > 40 ? 'WARNING' : 'CRITICAL')}
                                         </div>
                                     </div>
@@ -1814,10 +1834,11 @@ const MEMSDashboard = () => {
                                             className={`h-4 rounded-full transition-all ${healthReport?.status === 'HEALTHY' ? 'bg-green-500' :
                                                 healthReport?.status === 'WARNING' ? 'bg-orange-500' :
                                                     healthReport?.status === 'CRITICAL' ? 'bg-red-500' :
-                                                        parseFloat(rul) > 70 ? 'bg-green-500' :
-                                                            parseFloat(rul) > 40 ? 'bg-orange-500' : 'bg-red-500'
+                                                        healthReport?.status === 'AWAITING ML' || rul == null ? 'bg-slate-400' :
+                                                            parseFloat(rul) > 70 ? 'bg-green-500' :
+                                                                parseFloat(rul) > 40 ? 'bg-orange-500' : 'bg-red-500'
                                                 }`}
-                                            style={{ width: `${healthReport?.rul_percent || rul}%` }}
+                                            style={{ width: `${healthReport?.rul_percent === 'Pending ML' || rul == null ? 100 : (healthReport?.rul_percent || rul)}%` }}
                                         />
                                     </div>
 
