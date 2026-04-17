@@ -576,6 +576,29 @@ const MEMSDashboard = () => {
                     rule_reason: expl.rule_reason || expl.reason,
                     status_reason_details: expl.status_reason_details || expl.details
                 }));
+
+                // Regenerate Alerts based on trained ML prediction
+                const newAlerts = [];
+                if (expl.predicted_rul < 30 || expl.prediction === 'CRITICAL' || expl.status === 'CRITICAL') {
+                    newAlerts.push({
+                        type: 'critical',
+                        message: 'Critical: ML models detected severe degradation. Plan sensor replacement immediately.',
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                } else if (expl.predicted_rul < 50 || expl.prediction === 'WARNING' || expl.status === 'WARNING') {
+                    newAlerts.push({
+                        type: 'warning',
+                        message: 'Warning: ML models detected potential anomalies. Calibration recommended within 7 days.',
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                } else if (expl.predicted_rul < 70) {
+                    newAlerts.push({
+                        type: 'warning',
+                        message: 'ML analysis shows early-stage degradation patterns.',
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                }
+                setAlerts(newAlerts);
             }
 
             showToast('Models trained successfully!', 'success');
@@ -1481,14 +1504,20 @@ const MEMSDashboard = () => {
                         <p className="text-sm text-green-100">Mean Value ({getSensorUnit()})</p>
                     </div>
 
-                    <div className={`bg-gradient-to-br rounded-lg p-4 shadow-lg overflow-hidden ${healthReport?.status === 'AWAITING ML' ? 'from-slate-600 to-slate-700' : 'from-orange-600 to-orange-700'}`}>
+                    <div className={`bg-gradient-to-br rounded-lg p-4 shadow-lg overflow-hidden ${healthReport?.status === 'AWAITING ML' ? 'from-slate-600 to-slate-700' : 
+                                        healthReport?.status === 'CRITICAL' ? 'from-red-600 to-red-700' :
+                                        healthReport?.status === 'HEALTHY' ? 'from-green-600 to-green-700' :
+                                        'from-orange-600 to-orange-700'}`}>
                         <div className="flex items-center justify-between mb-2">
                             <AlertTriangle size={24} />
                             <span className={`font-bold truncate ${healthReport?.status === 'AWAITING ML' || rul == null ? 'text-lg' : 'text-2xl'}`}>
                                 {healthReport?.rul_percent === 'Pending ML' || rul == null ? 'Pending ML' : `${parseFloat(rul).toFixed(1)}%`}
                             </span>
                         </div>
-                        <p className={`text-sm ${healthReport?.status === 'AWAITING ML' ? 'text-slate-200' : 'text-orange-100'}`}>Remaining Useful Life</p>
+                        <p className={`text-sm ${healthReport?.status === 'AWAITING ML' ? 'text-slate-200' : 
+                                                healthReport?.status === 'CRITICAL' ? 'text-red-100' : 
+                                                healthReport?.status === 'HEALTHY' ? 'text-green-100' : 
+                                                'text-orange-100'}`}>Remaining Useful Life</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-4 shadow-lg overflow-hidden">
