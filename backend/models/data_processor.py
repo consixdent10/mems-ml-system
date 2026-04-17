@@ -509,10 +509,20 @@ class DataProcessor:
         processed['temperature'] = pd.to_numeric(data[temp_col], errors='coerce') if temp_col else 25 + np.random.normal(0, 2, len(data))
         processed['humidity'] = pd.to_numeric(data[humidity_col], errors='coerce') if humidity_col else 50 + np.random.normal(0, 5, len(data))
         
-        # Generate realistic noise
-        processed['drift'] = np.cumsum(np.random.normal(0, 0.001, len(data)))
-        flicker = self._generate_flicker_noise(len(data))
-        processed['noise'] = flicker * 0.01
+        drift_col = next((col for col in data.columns if 'drift' in col.lower()), None)
+        noise_col = next((col for col in data.columns if 'noise' in col.lower()), None)
+        
+        if drift_col:
+            processed['drift'] = pd.to_numeric(data[drift_col], errors='coerce')
+        else:
+            processed['drift'] = np.cumsum(np.random.normal(0, 0.001, len(data)))
+            
+        if noise_col:
+            processed['noise'] = pd.to_numeric(data[noise_col], errors='coerce')
+        else:
+            flicker = self._generate_flicker_noise(len(data))
+            processed['noise'] = flicker * 0.01
+            
         processed['signal'] = processed['value']
         processed['vibration'] = np.random.uniform(0, 0.5, len(data))
         
