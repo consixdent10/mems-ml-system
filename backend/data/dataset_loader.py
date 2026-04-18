@@ -253,8 +253,6 @@ class RealDatasetLoader:
         rolling_rms = pd.Series(values ** 2).rolling(window=window, min_periods=1).mean().apply(np.sqrt).values
         rms_norm = (rolling_rms - rolling_rms.min()) / (rolling_rms.max() - rolling_rms.min() + 1e-10)
         base_temp = 35.0
-        if info.fault_type != 'none':
-            base_temp = 42.0
         temperature = base_temp + rms_norm * 15 + np.random.normal(0, 0.5, n)
         
         # --- Drift ---
@@ -263,8 +261,6 @@ class RealDatasetLoader:
         drift = np.abs(cumulative_mean - overall_mean)
         drift_max = drift.max() if drift.max() > 0 else 1
         drift = (drift / drift_max) * 0.06
-        if info.fault_type == 'none':
-            drift = drift * 0.3
         
         # --- Noise ---
         fft_vals = fft(values)
@@ -277,8 +273,6 @@ class RealDatasetLoader:
         noise_abs = np.abs(noise)
         noise_max = noise_abs.max() if noise_abs.max() > 0 else 1
         noise_normalized = (noise_abs / noise_max) * 0.15
-        if info.fault_type == 'none':
-            noise_normalized = noise_normalized * 0.4
         
         # --- Signal (clean component) ---
         signal = smooth_signal
