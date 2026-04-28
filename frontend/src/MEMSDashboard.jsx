@@ -85,18 +85,18 @@ STATISTICAL ANALYSIS
 ────────────────────────────────────────────────────────────────────────────
 
 Signal Characteristics:
-  • Mean Value:                 ${features.mean}
-  • Standard Deviation:         ${features.std}
-  • Variance:                   ${features.variance}
-  • Signal-to-Noise Ratio:      ${features.snr}
-  • Range:                      ${features.range}
+  • Mean Value:                 ${parseFloat(features.mean).toFixed(4)}
+  • Standard Deviation:         ${parseFloat(features.std).toFixed(4)}
+  • Variance:                   ${parseFloat(features.variance).toFixed(4)}
+  • Signal-to-Noise Ratio:      ${parseFloat(features.snr).toFixed(4)}
+  • Range:                      ${parseFloat(features.range).toFixed(4)}
   
 Advanced Metrics:
-  • RMS (Root Mean Square):     ${features.rms}
-  • Peak-to-Peak:               ${features.peakToPeak}
-  • Crest Factor:               ${features.crestFactor}
-  • Skewness:                   ${features.skewness}
-  • Kurtosis:                   ${features.kurtosis}
+  • RMS (Root Mean Square):     ${parseFloat(features.rms).toFixed(4)}
+  • Peak-to-Peak:               ${parseFloat(features.peakToPeak).toFixed(4)}
+  • Crest Factor:               ${parseFloat(features.crestFactor).toFixed(4)}
+  • Skewness:                   ${parseFloat(features.skewness).toFixed(4)}
+  • Kurtosis:                   ${parseFloat(features.kurtosis).toFixed(4)}
 
 Signal Quality Assessment:
 ${parseFloat(features.snr) > 20 ? '✓ Excellent signal quality' :
@@ -112,11 +112,10 @@ ${modelResults.length > 0 ? modelResults.map((m, idx) => `
 Model ${idx + 1}: ${m.modelType}
 ${'─'.repeat(78)}
   Regression Metrics (RUL Prediction):
+    • Accuracy (±7% tolerance):   ${parseFloat(m.accuracy).toFixed(1) || 'N/A'}%
     • MAE (Mean Absolute Error):   ${m.mae?.toFixed(2) || 'N/A'}
     • RMSE (Root Mean Sq Error):   ${m.rmse?.toFixed(2) || 'N/A'}
-    • MSE (Mean Squared Error):    ${m.mse?.toFixed(4) || 'N/A'}
     • R² Score (Coefficient):      ${m.r2Score?.toFixed(4) || 'N/A'}
-    • MAPE (% Error):              ${m.mape?.toFixed(2) || 'N/A'}%
     • Training Time:               ${m.trainingTime} seconds
     • Training/Test Split:         ${m.trainingSize}/${m.testSize} samples
   
@@ -843,7 +842,8 @@ const MEMSDashboard = () => {
                 doc.text(label + ':', 25, yPos);
                 doc.setTextColor(...darkText);
                 doc.setFont('helvetica', 'bold');
-                doc.text(String(value), 90, yPos);
+                const formattedValue = value != null ? parseFloat(value).toFixed(4) : 'N/A';
+                doc.text(formattedValue, 90, yPos);
                 yPos += 7;
             });
 
@@ -867,19 +867,23 @@ const MEMSDashboard = () => {
                 doc.setFontSize(9);
                 doc.setFont('helvetica', 'bold');
                 doc.text('Model', 25, yPos);
-                doc.text('Accuracy', 70, yPos);
-                doc.text('MSE', 100, yPos);
-                doc.text('R² Score', 130, yPos);
-                doc.text('F1 Score', 160, yPos);
+                doc.text('Accuracy', 65, yPos);
+                doc.text('RMSE', 95, yPos);
+                doc.text('MAE', 120, yPos);
+                doc.text('R² Score', 145, yPos);
                 yPos += 10;
 
                 doc.setFont('helvetica', 'normal');
                 modelResults.forEach(model => {
-                    doc.text(model.modelType, 25, yPos);
-                    doc.text((parseFloat(model.accuracy) * 100).toFixed(1) + '%', 70, yPos);
-                    doc.text(parseFloat(model.mse).toFixed(6), 100, yPos);
-                    doc.text(parseFloat(model.r2Score).toFixed(4), 130, yPos);
-                    doc.text(parseFloat(model.f1Score).toFixed(4), 160, yPos);
+                    doc.text(model.modelType || 'N/A', 25, yPos);
+                    const acc = parseFloat(model.accuracy);
+                    doc.text((isNaN(acc) ? 'N/A' : acc.toFixed(1) + '%'), 65, yPos);
+                    const rmse = parseFloat(model.rmse);
+                    doc.text((isNaN(rmse) ? 'N/A' : rmse.toFixed(2)), 95, yPos);
+                    const mae = parseFloat(model.mae);
+                    doc.text((isNaN(mae) ? 'N/A' : mae.toFixed(2)), 120, yPos);
+                    const r2 = parseFloat(model.r2Score);
+                    doc.text((isNaN(r2) ? 'N/A' : r2.toFixed(4)), 145, yPos);
                     yPos += 7;
                 });
 
